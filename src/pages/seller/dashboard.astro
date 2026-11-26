@@ -1,0 +1,630 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Layout title="Seller Dashboard — Kebay">
+  <Header />
+
+  <style>
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px; }
+    .stat-card { background:#fff; border:1px solid #e5e5e5; border-radius:14px; padding:20px 14px; text-align:center; }
+    .stat-num { font-size:28px; font-weight:900; line-height:1; }
+    .stat-label { font-size:11px; color:#888; margin-top:6px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+    .tab-bar { display:flex; border-bottom:2px solid #e5e5e5; margin-bottom:24px; overflow-x:auto; scrollbar-width:none; }
+    .tab-bar::-webkit-scrollbar { display:none; }
+    .tab-btn { padding:12px 20px; font-size:15px; font-weight:700; border:none; background:none; cursor:pointer; border-bottom:3px solid transparent; color:#888; margin-bottom:-2px; white-space:nowrap; transition:all .15s; }
+    .tab-btn.active { border-bottom-color:#e8450a; color:#e8450a; }
+    .listing-card { background:#fff; border:1px solid #e5e5e5; border-radius:14px; overflow:hidden; }
+    .listing-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+    .order-row { background:#fff; border:1px solid #e5e5e5; border-radius:12px; padding:14px; margin-bottom:10px; display:flex; gap:12px; align-items:center; }
+    .status-pill { padding:4px 12px; border-radius:50px; font-size:12px; font-weight:700; }
+    /* Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:16px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:16px; padding:28px; max-width:500px; width:100%; max-height:90vh; overflow-y:auto; }
+    .form-input { width:100%; padding:10px 13px; border:1.5px solid #e5e5e5; border-radius:8px; font-size:14px; outline:none; box-sizing:border-box; }
+    .form-input:focus { border-color:#e8450a; }
+    /* Revenue chart */
+    .bar-chart { display:flex; gap:8px; align-items:flex-end; height:140px; padding:0 4px; }
+    .bar-col { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; }
+    .bar { width:100%; background:#e8450a; border-radius:6px 6px 0 0; min-height:4px; transition:height .3s; }
+    .bar-label { font-size:10px; color:#888; font-weight:600; }
+    .bar-val { font-size:10px; color:#333; font-weight:700; }
+    @media(max-width:768px) {
+      .stats-grid { grid-template-columns:repeat(2,1fr); }
+      .tab-btn { padding:10px 14px; font-size:13px; }
+    }
+  </style>
+
+  <main>
+    <div class="container" style="padding-top:24px;padding-bottom:60px;">
+
+      <!-- Header row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div>
+          <h1 style="font-size:24px;font-weight:900;margin-bottom:2px;">🏪 Seller Dashboard</h1>
+          <p style="color:#888;font-size:14px;" id="welcomeName">Loading…</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a href="/seller/new-product"
+            style="display:inline-flex;align-items:center;gap:6px;padding:11px 20px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;font-size:14px;">
+            ➕ New Listing
+          </a>
+          <button id="signOutBtn"
+            style="padding:11px 20px;border:1.5px solid #e5e5e5;border-radius:50px;font-weight:600;font-size:14px;background:#fff;cursor:pointer;color:#666;">
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      <!-- WhatsApp strip -->
+      <div id="waStrip" style="margin-bottom:16px;"></div>
+
+      <!-- Auth notice -->
+      <div id="authNotice" style="display:none;padding:16px;background:#fff5f5;border:1px solid #fcc;border-radius:12px;margin-bottom:24px;font-size:14px;">
+        🔒 You need to <a href="/auth/signin" style="color:#e8450a;font-weight:700;">sign in</a> to access your dashboard.
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card" style="background:linear-gradient(135deg,#fff0eb,#fff);">
+          <div style="font-size:28px;margin-bottom:4px;">📦</div>
+          <div class="stat-num" style="color:#e8450a;" id="statListings">—</div>
+          <div class="stat-label">Total Listings</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#f0fff4,#fff);">
+          <div style="font-size:28px;margin-bottom:4px;">✅</div>
+          <div class="stat-num" style="color:#1a7a4a;" id="statActive">—</div>
+          <div class="stat-label">Active</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#eff6ff,#fff);">
+          <div style="font-size:28px;margin-bottom:4px;">🛒</div>
+          <div class="stat-num" style="color:#1d4ed8;" id="statOrders">—</div>
+          <div class="stat-label">Orders</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#faf5ff,#fff);">
+          <div style="font-size:28px;margin-bottom:4px;">💰</div>
+          <div class="stat-num" style="color:#7c3aed;" id="statRevenue">—</div>
+          <div class="stat-label">Est. Revenue</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="listings">📦 My Listings</button>
+        <button class="tab-btn" data-tab="orders">🛒 Orders</button>
+        <button class="tab-btn" data-tab="profile">👤 Profile</button>
+        <button class="tab-btn" data-tab="revenue">📊 Revenue</button>
+      </div>
+
+      <!-- LISTINGS TAB -->
+      <div id="tab-listings">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+          <input id="searchListings" type="text" placeholder="🔍 Search listings…"
+            style="flex:1;min-width:200px;padding:9px 14px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;outline:none;" />
+          <select id="filterStatus" style="padding:9px 12px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;background:#fff;outline:none;">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div id="listingsEmpty" style="display:none;text-align:center;padding:60px 20px;color:#888;">
+          <div style="font-size:56px;margin-bottom:16px;">📦</div>
+          <div style="font-size:18px;font-weight:700;color:#333;margin-bottom:8px;">No listings yet</div>
+          <p style="margin-bottom:20px;">Start selling by adding your first product.</p>
+          <a href="/seller/new-product" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">+ Add First Product</a>
+        </div>
+
+        <div id="listingsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;"></div>
+      </div>
+
+      <!-- ORDERS TAB -->
+      <div id="tab-orders" style="display:none;">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+          <select id="filterOrderStatus" style="padding:9px 12px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;background:#fff;outline:none;">
+            <option value="all">All Orders</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+          </select>
+        </div>
+
+        <div id="ordersEmpty" style="display:none;text-align:center;padding:60px 20px;color:#888;">
+          <div style="font-size:56px;margin-bottom:16px;">🛒</div>
+          <div style="font-size:18px;font-weight:700;color:#333;margin-bottom:8px;">No orders yet</div>
+          <p>When buyers contact you via WhatsApp and you create an order, it appears here.</p>
+        </div>
+        <div id="ordersList"></div>
+      </div>
+
+      <!-- PROFILE TAB -->
+      <div id="tab-profile" style="display:none;">
+        <div style="max-width:480px;">
+          <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:24px;margin-bottom:16px;">
+            <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;">👤 Your Profile</h3>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:13px;font-weight:600;color:#888;display:block;margin-bottom:5px;">FULL NAME</label>
+              <input id="profileName" type="text" class="form-input" placeholder="Your name" />
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:13px;font-weight:600;color:#888;display:block;margin-bottom:5px;">WHATSAPP NUMBER</label>
+              <input id="profileWa" type="tel" placeholder="e.g. 254712345678" class="form-input" />
+              <div style="font-size:12px;color:#888;margin-top:4px;">Buyers contact you on this number when they click Buy.</div>
+            </div>
+            <div style="margin-bottom:20px;">
+              <label style="font-size:13px;font-weight:600;color:#888;display:block;margin-bottom:5px;">ROLE</label>
+              <div id="profileRole" style="padding:11px 14px;background:#f5f5f5;border-radius:8px;font-size:14px;font-weight:600;"></div>
+            </div>
+            <button id="saveProfile"
+              style="padding:12px 28px;background:#e8450a;color:#fff;border:none;border-radius:50px;font-weight:700;font-size:15px;cursor:pointer;">
+              Save Changes
+            </button>
+            <div id="profileSaved" style="display:none;margin-top:10px;font-size:13px;color:#1a7a4a;font-weight:600;">✅ Saved!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REVENUE TAB -->
+      <div id="tab-revenue" style="display:none;">
+        <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:24px;margin-bottom:16px;">
+          <h3 style="font-size:16px;font-weight:800;margin-bottom:4px;">Orders — Last 7 Days</h3>
+          <p style="font-size:13px;color:#888;margin-bottom:20px;">Daily order count over the past week</p>
+          <div class="bar-chart" id="revenueChart"></div>
+        </div>
+        <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px;">
+          <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;">
+            <span>Total orders (7d)</span>
+            <span id="revenueTotal" style="color:#e8450a;">—</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Edit Product Modal -->
+  <div id="editProductModal" class="modal-overlay">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="font-size:18px;font-weight:800;">✏️ Edit Listing</h3>
+        <button id="closeEditModal" style="background:none;border:none;font-size:22px;cursor:pointer;">✕</button>
+      </div>
+      <input type="hidden" id="editProductId" />
+      <div style="display:grid;gap:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">TITLE</label>
+          <input id="editTitle" type="text" class="form-input" />
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">PRICE (KSh)</label>
+          <input id="editPrice" type="number" class="form-input" />
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">DESCRIPTION</label>
+          <textarea id="editDesc" class="form-input" rows="3"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">STOCK</label>
+            <input id="editStock" type="number" class="form-input" />
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">CATEGORY</label>
+            <select id="editCategory" class="form-input">
+              <option value="phones">Phones</option>
+              <option value="computers">Computers</option>
+              <option value="fashion">Fashion</option>
+              <option value="home">Home & Garden</option>
+              <option value="motors">Motors</option>
+              <option value="electronics">Electronics</option>
+              <option value="sports">Sports</option>
+              <option value="gaming">Gaming</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <label style="font-size:13px;font-weight:600;">Active listing:</label>
+          <input id="editIsActive" type="checkbox" style="width:18px;height:18px;cursor:pointer;" />
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+        <button id="cancelEditModal" style="padding:10px 20px;background:#f5f5f5;color:#333;border:none;border-radius:50px;font-weight:600;font-size:14px;cursor:pointer;">Cancel</button>
+        <button id="saveEditProduct" style="padding:10px 20px;background:#e8450a;color:#fff;border:none;border-radius:50px;font-weight:700;font-size:14px;cursor:pointer;">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <Footer />
+</Layout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+
+  const statusStyle: Record<string, string> = {
+    pending:   'background:#fff9c4;color:#856404;',
+    confirmed: 'background:#dbeafe;color:#1d4ed8;',
+    shipped:   'background:#ede9fe;color:#7c3aed;',
+    delivered: 'background:#dcfce7;color:#15803d;',
+  };
+  const statusIcon: Record<string, string> = { pending:'⏳', confirmed:'✅', shipped:'🚚', delivered:'🎉' };
+
+  const demoProducts = [
+    { id:'demo-1', title:'Samsung Galaxy A55 5G 128GB', price:45000, description:'Brand new Samsung Galaxy A55 5G.', images:['https://picsum.photos/seed/phone1/300/200'], category:'phones', stock:3, is_active:true },
+    { id:'demo-2', title:'HP Laptop 15s Intel Core i5', price:68000, description:'HP 15s, Intel Core i5.', images:['https://picsum.photos/seed/laptop1/300/200'], category:'computers', stock:5, is_active:true },
+    { id:'demo-3', title:'Nike Air Max 270', price:12000, description:'Authentic Nike Air Max 270.', images:['https://picsum.photos/seed/shoes1/300/200'], category:'fashion', stock:2, is_active:false },
+  ];
+  const demoOrders = [
+    { id:'ord-001', products:{ title:'Samsung Galaxy A55', images:['https://picsum.photos/seed/phone1/80/80'], price:45000 }, quantity:1, status:'pending', buyer_wa:'254712000001' },
+    { id:'ord-002', products:{ title:'HP Laptop 15s', images:['https://picsum.photos/seed/laptop1/80/80'], price:68000 }, quantity:1, status:'confirmed', buyer_wa:'254722000002' },
+    { id:'ord-003', products:{ title:'Nike Air Max 270', images:['https://picsum.photos/seed/shoes1/80/80'], price:12000 }, quantity:2, status:'delivered', buyer_wa:'254733000003' },
+  ];
+
+  // ── Tab switching ──
+  const tabNames = ['listings','orders','profile','revenue'];
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = (btn as HTMLElement).dataset.tab!;
+      tabNames.forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (el) el.style.display = t === tab ? 'block' : 'none';
+      });
+    });
+  });
+
+  function renderListings(prods: any[]) {
+    const grid = document.getElementById('listingsGrid')!;
+    const empty = document.getElementById('listingsEmpty')!;
+    const search = (document.getElementById('searchListings') as HTMLInputElement).value.toLowerCase();
+    const statusFilter = (document.getElementById('filterStatus') as HTMLSelectElement).value;
+
+    let filtered = prods.filter(p => {
+      const matchSearch = p.title.toLowerCase().includes(search);
+      const matchStatus = statusFilter === 'all' || (statusFilter === 'active' ? p.is_active : !p.is_active);
+      return matchSearch && matchStatus;
+    });
+
+    if (filtered.length === 0) { empty.style.display = 'block'; grid.innerHTML = ''; return; }
+    empty.style.display = 'none';
+
+    grid.innerHTML = filtered.map(p => `
+      <div class="listing-card">
+        <div style="position:relative;">
+          <img src="${p.images?.[0] || 'https://picsum.photos/seed/product/300/200'}"
+            style="width:100%;height:150px;object-fit:cover;background:#f5f5f5;" />
+          <span class="status-pill" style="position:absolute;top:8px;right:8px;${p.is_active ? 'background:#dcfce7;color:#15803d;' : 'background:#f5f5f5;color:#999;'}">
+            ${p.is_active ? '● Active' : '○ Off'}
+          </span>
+        </div>
+        <div style="padding:12px;">
+          <div style="font-weight:700;font-size:14px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title}</div>
+          <div style="font-size:16px;font-weight:900;color:#e8450a;margin-bottom:4px;">${ksh(p.price)}</div>
+          <div style="font-size:12px;color:#999;margin-bottom:10px;">📂 ${p.category} &nbsp;·&nbsp; 📦 Stock: ${p.stock}</div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="window._editProduct('${p.id}')"
+              style="flex:1;text-align:center;padding:8px;border-radius:8px;background:#f0f0f0;font-size:13px;font-weight:600;color:#333;border:none;cursor:pointer;">
+              ✏️ Edit
+            </button>
+            <button onclick="window._toggleActive('${p.id}',${p.is_active})"
+              style="flex:1;padding:8px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;${p.is_active ? 'background:#fff0eb;color:#e8450a;' : 'background:#f0fff4;color:#1a7a4a;'}">
+              ${p.is_active ? '⏸ Pause' : '▶ Activate'}
+            </button>
+            <button onclick="window._deleteProduct('${p.id}')"
+              style="padding:8px 10px;border-radius:8px;border:none;background:#fff5f5;color:#e53e3e;cursor:pointer;font-size:14px;">
+              🗑
+            </button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderOrders(ords: any[]) {
+    const list = document.getElementById('ordersList')!;
+    const empty = document.getElementById('ordersEmpty')!;
+    const filter = (document.getElementById('filterOrderStatus') as HTMLSelectElement).value;
+
+    let filtered = ords.filter(o => filter === 'all' || o.status === filter);
+
+    if (filtered.length === 0) { empty.style.display = 'block'; list.innerHTML = ''; return; }
+    empty.style.display = 'none';
+
+    list.innerHTML = filtered.map(o => `
+      <div class="order-row">
+        <img src="${o.products?.images?.[0] || 'https://picsum.photos/80'}"
+          style="width:60px;height:60px;object-fit:cover;border-radius:10px;background:#f5f5f5;flex-shrink:0;" />
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o.products?.title || 'Product'}</div>
+          <div style="font-size:13px;color:#666;margin-top:2px;">
+            Qty: ${o.quantity} &nbsp;·&nbsp; <strong>${ksh((o.products?.price || 0) * o.quantity)}</strong>
+          </div>
+          <div style="font-size:12px;color:#888;margin-top:2px;">Order #${o.id.toString().slice(-8).toUpperCase()}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">
+          <span class="status-pill" style="${statusStyle[o.status] || ''}">${statusIcon[o.status] || ''} ${o.status.charAt(0).toUpperCase()+o.status.slice(1)}</span>
+          <select onchange="window._updateStatus('${o.id}', this.value)"
+            style="padding:5px 8px;border-radius:8px;border:1px solid #ddd;font-size:12px;font-weight:600;cursor:pointer;">
+            ${['pending','confirmed','shipped','delivered'].map(s =>
+              `<option value="${s}" ${o.status===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`
+            ).join('')}
+          </select>
+          ${o.buyer_wa ? `<a href="https://wa.me/${o.buyer_wa}" target="_blank"
+            style="font-size:12px;background:#25D366;color:#fff;padding:4px 10px;border-radius:50px;font-weight:600;">💬 Chat</a>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  function renderRevenueChart(ords: any[]) {
+    const chart = document.getElementById('revenueChart')!;
+    // Build 7-day array
+    const days: { label: string; count: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const label = d.toLocaleDateString('en-KE', { weekday:'short' });
+      const dateStr = d.toISOString().slice(0, 10);
+      const count = ords.filter((o: any) => o.created_at?.startsWith(dateStr)).length;
+      days.push({ label, count });
+    }
+    // If all zeros, use demo
+    const hasData = days.some(d => d.count > 0);
+    if (!hasData) {
+      const demos = [3, 1, 5, 2, 4, 0, 3];
+      days.forEach((d, i) => { d.count = demos[i]; });
+    }
+    const max = Math.max(...days.map(d => d.count), 1);
+    const total = days.reduce((s, d) => s + d.count, 0);
+    document.getElementById('revenueTotal')!.textContent = String(total) + ' orders';
+
+    chart.innerHTML = days.map(d => {
+      const pct = Math.round((d.count / max) * 100);
+      return `
+        <div class="bar-col">
+          <div class="bar-val">${d.count}</div>
+          <div class="bar" style="height:${pct}%;"></div>
+          <div class="bar-label">${d.label}</div>
+        </div>`;
+    }).join('');
+  }
+
+  let allProducts: any[] = [];
+  let allOrders: any[] = [];
+
+  async function loadDashboard() {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      document.getElementById('welcomeName')!.textContent = 'Demo mode — sign in to see your real data';
+      document.getElementById('authNotice')!.style.display = 'block';
+      allProducts = demoProducts;
+      allOrders = demoOrders;
+      renderWaStrip(null);
+    } else {
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      document.getElementById('welcomeName')!.textContent = `Welcome back, ${profile?.full_name || user.email} 👋`;
+      renderWaStrip(profile);
+
+      (document.getElementById('profileName') as HTMLInputElement).value = profile?.full_name || '';
+      (document.getElementById('profileWa') as HTMLInputElement).value = profile?.whatsapp_number || '';
+      document.getElementById('profileRole')!.textContent = profile?.role === 'seller' ? '🏪 Seller' : profile?.role === 'admin' ? '⚙️ Admin' : '🛍️ Buyer';
+
+      const { data: products } = await supabase.from('products').select('*').eq('seller_id', user.id).order('created_at', { ascending: false });
+      const { data: orders } = await supabase.from('orders').select('*, products(title,images,price)').eq('seller_id', user.id).order('created_at', { ascending: false });
+
+      allProducts = products || [];
+      allOrders = orders || [];
+    }
+
+    const totalRevenue = allOrders.filter((o: any) => o.status === 'delivered').reduce((s: number, o: any) => s + (o.products?.price || 0) * o.quantity, 0);
+    document.getElementById('statListings')!.textContent = String(allProducts.length);
+    document.getElementById('statActive')!.textContent = String(allProducts.filter((p: any) => p.is_active).length);
+    document.getElementById('statOrders')!.textContent = String(allOrders.length);
+    document.getElementById('statRevenue')!.textContent = totalRevenue > 0 ? ksh(totalRevenue) : '—';
+
+    renderListings(allProducts);
+    renderOrders(allOrders);
+    renderRevenueChart(allOrders);
+  }
+
+  function renderWaStrip(profile: any) {
+    const strip = document.getElementById('waStrip')!;
+    const wa = profile?.whatsapp_number;
+    if (!profile || !wa) {
+      strip.innerHTML = `
+        <div style="background:#fff9eb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:20px;">⚠️</span>
+          <div style="flex:1;min-width:200px;">
+            <strong>Add your WhatsApp number</strong> — buyers contact you here
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="waInput" type="tel" placeholder="e.g. 254712345678"
+              style="padding:9px 13px;border:1.5px solid #fde68a;border-radius:8px;font-size:14px;outline:none;width:200px;" />
+            <button onclick="window._saveWa()" style="padding:9px 18px;background:#e8450a;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Save</button>
+          </div>
+        </div>`;
+    } else {
+      strip.innerHTML = `
+        <div style="background:#f0fff4;border:1px solid #c6f6d5;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:20px;">📲</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;color:#888;font-weight:600;">WhatsApp Number</div>
+            <div id="waDisplay" style="font-weight:700;font-size:15px;">+${wa}</div>
+          </div>
+          <button onclick="window._startEditWa()" style="padding:8px 14px;background:#fff;border:1.5px solid #c6f6d5;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">✏️ Edit</button>
+        </div>
+        <div id="waEditRow" style="display:none;margin-top:8px;display:none;gap:8px;">
+          <input id="waInputEdit" type="tel" value="${wa}"
+            style="flex:1;padding:9px 13px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;outline:none;" />
+          <button onclick="window._saveWaEdit()" style="padding:9px 18px;background:#e8450a;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Save</button>
+        </div>`;
+    }
+  }
+
+  (window as any)._saveWa = async () => {
+    const val = (document.getElementById('waInput') as HTMLInputElement)?.value.trim().replace(/[\s-]/g,'');
+    if (!val) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await supabase.from('profiles').update({ whatsapp_number: val }).eq('id', user.id);
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user!.id).single();
+    renderWaStrip(profile);
+  };
+
+  (window as any)._startEditWa = () => {
+    const row = document.getElementById('waEditRow');
+    if (row) { row.style.display = 'flex'; }
+  };
+
+  (window as any)._saveWaEdit = async () => {
+    const val = (document.getElementById('waInputEdit') as HTMLInputElement)?.value.trim().replace(/[\s-]/g,'');
+    if (!val) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await supabase.from('profiles').update({ whatsapp_number: val }).eq('id', user.id);
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user!.id).single();
+    renderWaStrip(profile);
+  };
+
+  document.getElementById('searchListings')?.addEventListener('input', () => renderListings(allProducts));
+  document.getElementById('filterStatus')?.addEventListener('change', () => renderListings(allProducts));
+  document.getElementById('filterOrderStatus')?.addEventListener('change', () => renderOrders(allOrders));
+
+  // ── Edit product modal ──
+  (window as any)._editProduct = (id: string) => {
+    const p = allProducts.find((x: any) => x.id === id);
+    if (!p) return;
+    (document.getElementById('editProductId') as HTMLInputElement).value = id;
+    (document.getElementById('editTitle') as HTMLInputElement).value = p.title;
+    (document.getElementById('editPrice') as HTMLInputElement).value = p.price;
+    (document.getElementById('editDesc') as HTMLTextAreaElement).value = p.description || '';
+    (document.getElementById('editStock') as HTMLInputElement).value = p.stock;
+    (document.getElementById('editCategory') as HTMLSelectElement).value = p.category;
+    (document.getElementById('editIsActive') as HTMLInputElement).checked = p.is_active;
+    document.getElementById('editProductModal')!.classList.add('open');
+  };
+
+  document.getElementById('closeEditModal')?.addEventListener('click', () => {
+    document.getElementById('editProductModal')!.classList.remove('open');
+  });
+  document.getElementById('cancelEditModal')?.addEventListener('click', () => {
+    document.getElementById('editProductModal')!.classList.remove('open');
+  });
+
+  document.getElementById('saveEditProduct')?.addEventListener('click', async () => {
+    const id = (document.getElementById('editProductId') as HTMLInputElement).value;
+    const updates = {
+      title: (document.getElementById('editTitle') as HTMLInputElement).value.trim(),
+      price: parseInt((document.getElementById('editPrice') as HTMLInputElement).value),
+      description: (document.getElementById('editDesc') as HTMLTextAreaElement).value.trim(),
+      stock: parseInt((document.getElementById('editStock') as HTMLInputElement).value),
+      category: (document.getElementById('editCategory') as HTMLSelectElement).value,
+      is_active: (document.getElementById('editIsActive') as HTMLInputElement).checked,
+    };
+    const idx = allProducts.findIndex((p: any) => p.id === id);
+    if (idx > -1) allProducts[idx] = { ...allProducts[idx], ...updates };
+    renderListings(allProducts);
+    document.getElementById('editProductModal')!.classList.remove('open');
+    if (!id.startsWith('demo')) {
+      await supabase.from('products').update(updates).eq('id', id);
+    }
+  });
+
+  // ── Other actions ──
+  (window as any)._toggleActive = async (id: string, current: boolean) => {
+    const p = allProducts.find((x: any) => x.id === id);
+    if (p) p.is_active = !current;
+    renderListings(allProducts);
+    document.getElementById('statActive')!.textContent = String(allProducts.filter((p: any) => p.is_active).length);
+    if (!id.startsWith('demo')) await supabase.from('products').update({ is_active: !current }).eq('id', id);
+  };
+
+  (window as any)._deleteProduct = async (id: string) => {
+    if (!confirm('Delete this listing? This cannot be undone.')) return;
+    allProducts = allProducts.filter((p: any) => p.id !== id);
+    renderListings(allProducts);
+    document.getElementById('statListings')!.textContent = String(allProducts.length);
+    document.getElementById('statActive')!.textContent = String(allProducts.filter((p: any) => p.is_active).length);
+    if (!id.startsWith('demo')) await supabase.from('products').delete().eq('id', id);
+  };
+
+  (window as any)._updateStatus = async (id: string, status: string) => {
+    const o = allOrders.find((x: any) => x.id === id);
+    if (o) o.status = status;
+    renderOrders(allOrders);
+    if (!id.startsWith('ord')) await supabase.from('orders').update({ status }).eq('id', id);
+  };
+
+  document.getElementById('saveProfile')?.addEventListener('click', async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const name = (document.getElementById('profileName') as HTMLInputElement).value.trim();
+    const wa   = (document.getElementById('profileWa') as HTMLInputElement).value.trim().replace(/[\s-]/g,'');
+    await supabase.from('profiles').update({ full_name: name, whatsapp_number: wa }).eq('id', user.id);
+    document.getElementById('profileSaved')!.style.display = 'block';
+    setTimeout(() => { document.getElementById('profileSaved')!.style.display = 'none'; }, 2000);
+  });
+
+  document.getElementById('signOutBtn')?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem('kebay_role');
+    window.location.href = '/';
+  });
+
+  loadDashboard();
+
+  // ── Realtime subscriptions ──
+  let currentSellerId: string | null = null;
+  supabase.auth.getUser().then(({ data: { user } }) => { currentSellerId = user?.id ?? null; });
+
+  const productsChannel = supabase
+    .channel('seller-products')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async () => {
+      if (!currentSellerId) return;
+      const { data } = await supabase.from('products').select('*').eq('seller_id', currentSellerId).order('created_at', { ascending: false });
+      allProducts = data || [];
+      renderListings(allProducts);
+      updateStats();
+    })
+    .subscribe();
+
+  const ordersChannel = supabase
+    .channel('seller-orders')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, async (payload: any) => {
+      if (!currentSellerId) return;
+      const { data } = await supabase.from('orders').select('*, products(title,images,price)').eq('seller_id', currentSellerId).order('created_at', { ascending: false });
+      const prevCount = allOrders.length;
+      allOrders = data || [];
+      renderOrders(allOrders);
+      updateStats();
+      renderRevenueChart(allOrders);
+      // New order: flash + toast
+      if (payload.eventType?.toUpperCase() === 'INSERT' && allOrders.length > prevCount) {
+        const first = document.querySelector('#ordersList .order-row') as HTMLElement;
+        if (first && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          first.style.transition = 'box-shadow 0.4s ease, background 0.4s ease';
+          first.style.boxShadow = '0 0 0 3px #e8450a';
+          first.style.background = '#fff0eb';
+          setTimeout(() => { first.style.boxShadow = 'none'; first.style.background = '#fff'; }, 1500);
+        }
+        (window as any).showToast?.('🛒 New order received!', 'success', 3000);
+      }
+    })
+    .subscribe();
+
+  function updateStats() {
+    document.getElementById('statListings')!.textContent = String(allProducts.length);
+    document.getElementById('statActive')!.textContent = String(allProducts.filter((p: any) => p.is_active).length);
+    document.getElementById('statOrders')!.textContent = String(allOrders.length);
+    const totalRevenue = allOrders.filter((o: any) => o.status === 'delivered').reduce((s: number, o: any) => s + (o.products?.price || 0) * o.quantity, 0);
+    document.getElementById('statRevenue')!.textContent = totalRevenue > 0 ? ksh(totalRevenue) : '—';
+  }
+
+  window.addEventListener('beforeunload', () => {
+    productsChannel.unsubscribe();
+    ordersChannel.unsubscribe();
+  });
+</script>

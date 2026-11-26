@@ -1,0 +1,340 @@
+---
+export const prerender = true;
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+const categories = [
+  { name: 'Phones',        img: '/61B9jz7fEeL._AC_UY218_.jpg',  slug: 'phones' },
+  { name: 'Computers',     img: '/laptop.jpg',                   slug: 'computers' },
+  { name: 'Fashion',       img: '/fashion.jpg',                  slug: 'fashion' },
+  { name: 'Home & Garden', img: '/homeandgarden.jpg',            slug: 'home' },
+  { name: 'Motors',        img: '/cars.jpg',                     slug: 'motors' },
+  { name: 'Electronics',   img: '/electronics.jpg',              slug: 'electronics' },
+  { name: 'Sports',        img: '/sports.jpg',                   slug: 'sporting' },
+  { name: 'Gaming',        img: '/41gk0-eoy4L._SR210,210_.jpg',  slug: 'gaming' },
+];
+
+const trending = [
+  { name: 'Tech',         img: '/electronics.jpg',  slug: 'electronics' },
+  { name: 'Motors',       img: '/cars.jpg',          slug: 'motors' },
+  { name: 'Fashion',      img: '/fashion.jpg',       slug: 'fashion' },
+  { name: 'Collectibles', img: '/41gk0-eoy4L._SR210,210_.jpg', slug: 'collectibles' },
+  { name: 'Home',         img: '/homeandgarden.jpg', slug: 'home' },
+  { name: 'Sports',       img: '/sports.jpg',        slug: 'sporting' },
+];
+
+const demoProducts = [
+  { id: 'demo-1', title: 'Samsung Galaxy A55 5G',      price: 45000, original: 52000, image: 'https://picsum.photos/seed/phone1/400/400',  category: 'phones' },
+  { id: 'demo-2', title: 'HP Laptop 15s Intel i5',     price: 68000, original: 75000, image: 'https://picsum.photos/seed/laptop1/400/400', category: 'computers' },
+  { id: 'demo-3', title: 'Nike Air Max 270',            price: 12000, original: 15000, image: 'https://picsum.photos/seed/shoes1/400/400',  category: 'fashion' },
+  { id: 'demo-4', title: 'Sony WH-1000XM5 Headphones', price: 35000, original: 42000, image: 'https://picsum.photos/seed/audio1/400/400',  category: 'electronics' },
+  { id: 'demo-5', title: 'LG Smart TV 43"',             price: 55000, original: 65000, image: 'https://picsum.photos/seed/tv1/400/400',    category: 'electronics' },
+  { id: 'demo-6', title: 'Toyota Alloy Rims Set',       price: 28000, original: 32000, image: 'https://picsum.photos/seed/rims1/400/400',  category: 'motors' },
+];
+
+function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+---
+export const prerender = true;
+
+<Layout title="Kebay — Kenya's Marketplace">
+  <Header />
+
+  <main>
+    <div class="container">
+
+      <!-- ── Hero Banner Strip ── -->
+      <div style="margin:16px 0;position:relative;">
+        <div id="bannerStrip" class="banner-strip">
+
+          <div class="banner-card" style="background:linear-gradient(135deg,#e8450a,#c23a08);">
+            <div class="bc-eyebrow">KENYA'S MARKETPLACE</div>
+            <h1 class="bc-title">The future<br/>in your hands</h1>
+            <p class="bc-body">Buy, sell anything in Kenya.<br/>Connect directly on WhatsApp.</p>
+            <a href="/search" class="bc-btn bc-btn-white" style="color:#e8450a;">Shop Now</a>
+            <span class="bc-bg-icon">🛍️</span>
+          </div>
+
+          <div class="banner-card" style="background:#1a7a4a;">
+            <div class="bc-eyebrow">LIMITED TIME</div>
+            <h2 class="bc-title">Today's best<br/>deals</h2>
+            <p class="bc-body">Fresh discounts every day.<br/>Low prices on top items.</p>
+            <a href="/search?deals=true" class="bc-btn bc-btn-white" style="color:#1a7a4a;">See Deals</a>
+            <span class="bc-bg-icon">🏷️</span>
+          </div>
+
+          <div class="banner-card" style="background:#111;">
+            <div class="bc-eyebrow">NEW ARRIVALS</div>
+            <h2 class="bc-title">Latest phones<br/>and gadgets</h2>
+            <p class="bc-body">iPhones, Samsung, Tecno<br/>and more — all in KSh.</p>
+            <a href="/search?cat=phones" class="bc-btn" style="background:#e8450a;color:#fff;">Shop Phones</a>
+            <span class="bc-bg-icon">📱</span>
+          </div>
+
+          <div class="banner-card" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">
+            <div class="bc-eyebrow">TRENDING NOW</div>
+            <h2 class="bc-title">Style for<br/>every budget</h2>
+            <p class="bc-body">Clothes, shoes, bags<br/>from Kenyan sellers.</p>
+            <a href="/search?cat=fashion" class="bc-btn bc-btn-white" style="color:#7c3aed;">Shop Fashion</a>
+            <span class="bc-bg-icon">👗</span>
+          </div>
+
+          <div class="banner-card" style="background:linear-gradient(135deg,#0369a1,#0ea5e9);">
+            <div class="bc-eyebrow">TOP PICKS</div>
+            <h2 class="bc-title">Electronics<br/>and home tech</h2>
+            <p class="bc-body">TVs, laptops, audio<br/>at the best prices.</p>
+            <a href="/search?cat=electronics" class="bc-btn bc-btn-white" style="color:#0369a1;">Shop Electronics</a>
+            <span class="bc-bg-icon">⚡</span>
+          </div>
+
+          <div class="banner-card" style="background:#25D366;">
+            <div class="bc-eyebrow">HOW IT WORKS</div>
+            <h2 class="bc-title">Buy directly<br/>on WhatsApp</h2>
+            <p class="bc-body">Click Buy, message the seller<br/>instantly. No middleman.</p>
+            <a href="/auth/register" class="bc-btn bc-btn-white" style="color:#25D366;">Get Started</a>
+            <span class="bc-bg-icon">💬</span>
+          </div>
+
+        </div>
+        <button id="bannerNext" class="banner-arrow">›</button>
+      </div>
+
+      <!-- ── Shop by Category ── -->
+      <section class="section">
+        <h2 class="section-title">Shop by Category</h2>
+        <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;">
+          {categories.map(cat => (
+            <a href={`/search?cat=${cat.slug}`} class="cat-card">
+              {cat.img && <img src={cat.img} alt={cat.name} class="cat-card__img" />}
+              <span class="cat-card__name">{cat.name}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- ── Today's Deals ── -->
+      <section class="section">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+          <div>
+            <h2 class="section-title" style="margin-bottom:0;">Today's Deals</h2>
+            <p class="section-subtitle" style="margin-top:4px;">Fresh listings every day</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span id="liveBadge" style="display:none;font-size:11px;font-weight:700;padding:3px 8px;border-radius:50px;background:#fee2e2;color:#dc2626;">🔴 Live</span>
+            <a href="/search?deals=true" style="font-size:13px;color:#e8450a;font-weight:600;">See all →</a>
+          </div>
+        </div>
+        <div class="deals-grid" id="dealsGrid">
+          {demoProducts.map(p => (
+            <a href={`/product/${p.id}`} class="product-card">
+              <img src={p.image} alt={p.title} class="product-card__img" loading="lazy" />
+              <div class="product-card__badge">{Math.round((1 - p.price / p.original) * 100)}% OFF</div>
+              <button class="product-card__wish">🤍</button>
+              <div class="product-card__body">
+                <div class="product-card__title">{p.title}</div>
+                <div>
+                  <span class="product-card__price">{ksh(p.price)}</span>
+                  <span class="product-card__original">{ksh(p.original)}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- ── Shopping made easy ── -->
+      <div style="margin:8px 0 24px;border-radius:16px;background:#1a7a4a;color:#fff;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <div>
+          <h2 style="font-size:22px;font-weight:800;margin-bottom:8px;">Shopping made easy</h2>
+          <p style="opacity:0.9;font-size:14px;margin-bottom:16px;">Connect with trusted sellers across Kenya.<br/>Chat directly on WhatsApp — no middleman.</p>
+          <a href="/auth/register" style="display:inline-block;background:#fff;color:#1a7a4a;border-radius:50px;font-weight:700;padding:12px 24px;font-size:14px;">Get Started</a>
+        </div>
+        <div style="font-size:72px;opacity:0.25;">🛍️</div>
+      </div>
+
+      <!-- ── Trending ── -->
+      <section class="section">
+        <h2 class="section-title">Trending on Kebay</h2>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;">
+          {trending.map(cat => (
+            <a href={`/search?cat=${cat.slug}`} class="cat-card">
+              {cat.img && <img src={cat.img} alt={cat.name} class="cat-card__img" />}
+              <span class="cat-card__name">{cat.name}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- ── More to Explore ── -->
+      <section class="section">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+          <h2 class="section-title" style="margin-bottom:0;">More to Explore</h2>
+          <a href="/search" style="font-size:13px;color:#e8450a;font-weight:600;">See all →</a>
+        </div>
+        <div class="explore-grid" id="exploreGrid">
+          {demoProducts.map(p => (
+            <a href={`/product/${p.id}`} class="product-card">
+              <img src={p.image} alt={p.title} class="product-card__img" loading="lazy" />
+              <button class="product-card__wish">🤍</button>
+              <div class="product-card__body">
+                <div class="product-card__title">{p.title}</div>
+                <div><span class="product-card__price">{ksh(p.price)}</span></div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  /* ── Grids ── */
+  .deals-grid, .explore-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+
+  /* ── Banner strip ── */
+  .banner-strip { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 4px; }
+  .banner-strip::-webkit-scrollbar { display: none; }
+  .banner-card { min-width: 260px; flex-shrink: 0; scroll-snap-align: start; border-radius: 16px; color: #fff; padding: 28px 22px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .bc-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: .8; margin-bottom: 8px; }
+  .bc-title { font-size: 22px; font-weight: 900; line-height: 1.25; margin-bottom: 10px; }
+  .bc-body { opacity: .9; font-size: 13px; margin-bottom: 18px; line-height: 1.5; flex: 1; }
+  .bc-btn { display: inline-block; border-radius: 50px; font-weight: 700; padding: 10px 22px; font-size: 13px; }
+  .bc-btn-white { background: #fff; }
+  .bc-bg-icon { position: absolute; right: -16px; bottom: -16px; font-size: 90px; opacity: .1; }
+  .banner-arrow { display: none; position: absolute; right: -16px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,.12); font-size: 20px; cursor: pointer; align-items: center; justify-content: center; z-index: 10; }
+
+  /* ── Info card ── */
+  .info-card { display:none; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .deals-grid, .explore-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+    .grid-3 { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+    [style*="repeat(8,1fr)"] { grid-template-columns: repeat(4, 1fr) !important; }
+    [style*="repeat(6,1fr)"] { grid-template-columns: repeat(3, 1fr) !important; }
+  }
+  @media (min-width: 769px) {
+    .banner-arrow { display: flex !important; }
+  }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase';
+  import { watchTable, fadeIn } from '../lib/realtime';
+
+  const strip = document.getElementById('bannerStrip') as HTMLElement;
+  document.getElementById('bannerNext')?.addEventListener('click', () => {
+    strip?.scrollBy({ left: 280, behavior: 'smooth' });
+  });
+
+  // Try to load banners from Supabase; keep hardcoded ones on error or empty result
+  (async () => {
+    try {
+      const { data: banners, error } = await supabase
+        .from('banners')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (!error && banners && banners.length > 0) {
+        strip.innerHTML = banners.map((b: any) => `
+          <div class="banner-card" style="background:${b.bg_color};">
+            <div class="bc-eyebrow">${b.subtitle}</div>
+            <h2 class="bc-title">${b.title}</h2>
+            <p class="bc-body">${b.body}</p>
+            <a href="${b.cta_link}" class="bc-btn bc-btn-white">${b.cta_text}</a>
+            <span class="bc-bg-icon">${b.icon}</span>
+          </div>`).join('');
+      }
+    } catch (_) {
+      // Keep hardcoded banners
+    }
+  })();
+
+  // ── Demo product data for fallback ──
+  const DEMO = [
+    { id: 'demo-1', title: 'Samsung Galaxy A55 5G',      price: 45000, original: 52000, image: 'https://picsum.photos/seed/phone1/400/400' },
+    { id: 'demo-2', title: 'HP Laptop 15s Intel i5',     price: 68000, original: 75000, image: 'https://picsum.photos/seed/laptop1/400/400' },
+    { id: 'demo-3', title: 'Nike Air Max 270',            price: 12000, original: 15000, image: 'https://picsum.photos/seed/shoes1/400/400' },
+    { id: 'demo-4', title: 'Sony WH-1000XM5 Headphones', price: 35000, original: 42000, image: 'https://picsum.photos/seed/audio1/400/400' },
+    { id: 'demo-5', title: 'LG Smart TV 43"',             price: 55000, original: 65000, image: 'https://picsum.photos/seed/tv1/400/400' },
+    { id: 'demo-6', title: 'Toyota Alloy Rims Set',       price: 28000, original: 32000, image: 'https://picsum.photos/seed/rims1/400/400' },
+  ];
+
+  function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+
+  function productCardHtml(p: any, showBadge = false) {
+    const orig = p.original_price || p.original;
+    const badgeHtml = (showBadge && orig && orig > p.price)
+      ? `<div class="product-card__badge">${Math.round((1 - p.price / orig) * 100)}% OFF</div>`
+      : '';
+    const origHtml = (orig && orig > p.price)
+      ? `<span class="product-card__original">${ksh(orig)}</span>`
+      : '';
+    const img = p.images?.[0] || p.image || 'https://picsum.photos/seed/product/400/400';
+    return `
+      <a href="/product/${p.id}" class="product-card">
+        <img src="${img}" alt="${p.title}" class="product-card__img" loading="lazy" />
+        ${badgeHtml}
+        <button class="product-card__wish">🤍</button>
+        <div class="product-card__body">
+          <div class="product-card__title">${p.title}</div>
+          <div>
+            <span class="product-card__price">${ksh(p.price)}</span>
+            ${origHtml}
+          </div>
+        </div>
+      </a>`;
+  }
+
+  function renderGrid(gridId: string, products: any[], showBadge = false) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const html = products.map(p => productCardHtml(p, showBadge)).join('');
+    grid.innerHTML = html;
+    if (!reduced) {
+      Array.from(grid.children).forEach((el, i) => {
+        setTimeout(() => fadeIn(el as HTMLElement), i * 40);
+      });
+    }
+  }
+
+  async function fetchAndRenderProducts() {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (!error && data && data.length > 0) {
+        renderGrid('dealsGrid', data, true);
+        renderGrid('exploreGrid', data, false);
+        document.getElementById('liveBadge')!.style.display = 'inline-block';
+        return;
+      }
+    } catch (_) {
+      // fall through to demo
+    }
+    // Fallback to demo data
+    renderGrid('dealsGrid', DEMO, true);
+    renderGrid('exploreGrid', DEMO, false);
+  }
+
+  // Initial load
+  fetchAndRenderProducts();
+
+  // Realtime subscription
+  const channel = watchTable(supabase, 'products', () => {
+    fetchAndRenderProducts();
+  });
+
+  window.addEventListener('beforeunload', () => channel.unsubscribe());
+</script>

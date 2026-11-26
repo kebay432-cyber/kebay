@@ -1,0 +1,263 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="My Orders — Kebay">
+  <Header />
+
+  <style>
+    .order-card { background:#fff; border:1px solid #e5e5e5; border-radius:14px; overflow:hidden; margin-bottom:14px; }
+    .order-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.07); }
+    .progress-bar { display:flex; align-items:center; padding:14px 16px 16px; background:#fafafa; border-top:1px solid #f0f0f0; }
+    .progress-step { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; }
+    .progress-step:not(:last-child)::after { content:''; position:absolute; top:14px; left:50%; right:-50%; height:2px; background:#e5e5e5; z-index:0; }
+    .progress-step.done:not(:last-child)::after { background:#e8450a; }
+    .step-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; position:relative; z-index:1; transition:background 0.5s ease, color 0.5s ease, box-shadow 0.5s ease; }
+    .progress-step.done:not(:last-child)::after { background:#e8450a; transition:background 0.5s ease; }
+    .step-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.3px; }
+    .status-pill { padding:4px 12px; border-radius:50px; font-size:12px; font-weight:700; transition:background 0.5s ease, color 0.5s ease; }
+    @media (prefers-reduced-motion: reduce) { .step-dot, .status-pill { transition:none; } }
+    @media(max-width:480px) {
+      .step-label { font-size:9px; }
+      .step-dot { width:24px; height:24px; font-size:11px; }
+    }
+  </style>
+
+  <main>
+    <div class="container" style="padding-top:24px;padding-bottom:60px;max-width:720px;">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h1 style="font-size:22px;font-weight:900;margin-bottom:2px;">📦 My Orders</h1>
+          <p style="color:#888;font-size:14px;">Track all your purchases</p>
+        </div>
+        <!-- Filter -->
+        <select id="filterStatus" style="padding:9px 14px;border:1.5px solid #e5e5e5;border-radius:50px;font-size:14px;background:#fff;outline:none;cursor:pointer;">
+          <option value="all">All Orders</option>
+          <option value="pending">⏳ Pending</option>
+          <option value="confirmed">✅ Confirmed</option>
+          <option value="shipped">🚚 Shipped</option>
+          <option value="delivered">🎉 Delivered</option>
+        </select>
+      </div>
+
+      <!-- Auth notice -->
+      <div id="authNotice" style="display:none;padding:14px 18px;background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;margin-bottom:20px;font-size:14px;">
+        💡 <a href="/auth/signin" style="color:#e8450a;font-weight:700;">Sign in</a> to see your real orders.
+        Showing demo data for now.
+      </div>
+
+      <!-- Empty state -->
+      <div id="ordersEmpty" style="display:none;text-align:center;padding:60px 20px;color:#888;">
+        <div style="font-size:56px;margin-bottom:16px;">📦</div>
+        <div style="font-size:18px;font-weight:700;color:#333;margin-bottom:8px;">No orders found</div>
+        <p style="margin-bottom:20px;">When you buy from sellers via WhatsApp, your orders appear here.</p>
+        <a href="/search" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">Shop Now</a>
+      </div>
+
+      <!-- Success banner from checkout -->
+      <div id="successBanner" style="display:none;padding:16px 20px;background:#dcfce7;border:1px solid #86efac;border-radius:12px;margin-bottom:20px;font-size:15px;font-weight:700;color:#15803d;">
+        🎉 Your order was sent successfully via WhatsApp!
+      </div>
+
+      <div id="ordersList"></div>
+
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+  import { watchTable } from '../lib/realtime';
+  if (new URLSearchParams(window.location.search).get('success') === '1') {
+    document.getElementById('successBanner')!.style.display = 'block';
+  }
+
+  function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+
+  const statusStyle: Record<string, string> = {
+    pending:   'background:#fff9c4;color:#856404;',
+    confirmed: 'background:#dbeafe;color:#1d4ed8;',
+    shipped:   'background:#ede9fe;color:#7c3aed;',
+    delivered: 'background:#dcfce7;color:#15803d;',
+  };
+  const statusIcon: Record<string, string> = { pending:'⏳', confirmed:'✅', shipped:'🚚', delivered:'🎉' };
+  const steps = ['pending','confirmed','shipped','delivered'];
+
+  const demoOrders = [
+    {
+      id:'ORD-KBY-001', status:'delivered', quantity:1, created_at:'2026-11-20T10:00:00Z',
+      products:{ id:'demo-1', title:'Samsung Galaxy A55 5G 128GB', images:['https://picsum.photos/seed/phone1/300/300'], price:45000,
+        profiles:{ full_name:'TechHub Kenya', whatsapp_number:'254712345678' } }
+    },
+    {
+      id:'ORD-KBY-002', status:'shipped', quantity:1, created_at:'2026-11-22T14:00:00Z',
+      products:{ id:'demo-2', title:'HP Laptop 15s Intel Core i5', images:['https://picsum.photos/seed/laptop1/300/300'], price:68000,
+        profiles:{ full_name:'PC World', whatsapp_number:'254722345678' } }
+    },
+    {
+      id:'ORD-KBY-003', status:'pending', quantity:2, created_at:'2026-11-24T09:00:00Z',
+      products:{ id:'demo-3', title:'Nike Air Max 270', images:['https://picsum.photos/seed/shoes1/300/300'], price:12000,
+        profiles:{ full_name:'Sneaker Zone', whatsapp_number:'254733345678' } }
+    },
+  ];
+
+  let allOrders: any[] = [];
+
+  function renderOrders() {
+    const filter = (document.getElementById('filterStatus') as HTMLSelectElement).value;
+    const list = document.getElementById('ordersList')!;
+    const empty = document.getElementById('ordersEmpty')!;
+
+    const filtered = filter === 'all' ? allOrders : allOrders.filter(o => o.status === filter);
+
+    if (filtered.length === 0) {
+      empty.style.display = 'block'; list.innerHTML = ''; return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = filtered.map(o => {
+      const p = o.products;
+      const currentStep = steps.indexOf(o.status);
+      const date = new Date(o.created_at).toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' });
+      const waText = encodeURIComponent(`Hi, following up on my order for: ${p?.title} — Order #${o.id}`);
+      const waLink = p?.profiles?.whatsapp_number ? `https://wa.me/${p.profiles.whatsapp_number}?text=${waText}` : '#';
+
+      return `
+        <div class="order-card">
+          <!-- Main row -->
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:14px;">
+            <a href="/product/${p?.id}">
+              <img src="${p?.images?.[0] || 'https://picsum.photos/80'}"
+                style="width:76px;height:76px;object-fit:cover;border-radius:10px;background:#f5f5f5;flex-shrink:0;" />
+            </a>
+            <div style="flex:1;min-width:0;">
+              <a href="/product/${p?.id}" style="font-weight:700;font-size:15px;line-height:1.3;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;">
+                ${p?.title || 'Product'}
+              </a>
+              <div style="font-size:15px;font-weight:900;color:#111;margin-top:4px;">${ksh((p?.price || 0) * o.quantity)}</div>
+              <div style="font-size:12px;color:#999;margin-top:2px;">Qty: ${o.quantity} &nbsp;·&nbsp; Ordered ${date}</div>
+              <div style="font-size:12px;color:#888;margin-top:2px;">Seller: <strong>${p?.profiles?.full_name || 'Seller'}</strong></div>
+            </div>
+            <span class="status-pill" style="${statusStyle[o.status] || ''};flex-shrink:0;">
+              ${statusIcon[o.status] || ''} ${o.status.charAt(0).toUpperCase()+o.status.slice(1)}
+            </span>
+          </div>
+
+          <!-- Progress tracker -->
+          <div class="progress-bar">
+            ${steps.map((s, i) => {
+              const done = i <= currentStep;
+              const isCurrent = i === currentStep;
+              return `
+                <div class="progress-step ${done ? 'done' : ''}">
+                  <div class="step-dot" style="${done ? 'background:#e8450a;color:#fff;' : 'background:#f0f0f0;color:#aaa;'}${isCurrent ? 'box-shadow:0 0 0 3px rgba(232,69,10,.2);' : ''}">
+                    ${done ? (isCurrent ? statusIcon[s] : '✓') : (i + 1)}
+                  </div>
+                  <span class="step-label" style="color:${done ? '#111' : '#aaa'};">
+                    ${s.charAt(0).toUpperCase() + s.slice(1)}
+                  </span>
+                </div>`;
+            }).join('')}
+          </div>
+
+          <!-- Action row -->
+          <div style="display:flex;gap:8px;padding:0 14px 14px;">
+            <a href="/product/${p?.id}"
+              style="flex:1;text-align:center;padding:9px;border-radius:8px;background:#f5f5f5;font-size:13px;font-weight:600;color:#333;">
+              View Product
+            </a>
+            <a href="${waLink}" target="_blank"
+              style="flex:1;text-align:center;padding:9px;border-radius:8px;background:#25D366;color:#fff;font-size:13px;font-weight:700;">
+              💬 Contact Seller
+            </a>
+            ${o.status === 'delivered' ? `
+            <button onclick="window._reorder('${p?.id}')"
+              style="flex:1;padding:9px;border-radius:8px;background:#fff0eb;color:#e8450a;font-size:13px;font-weight:700;border:none;cursor:pointer;">
+              🔄 Buy Again
+            </button>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  (window as any)._reorder = (productId: string) => {
+    window.location.href = `/product/${productId}`;
+  };
+
+  document.getElementById('filterStatus')?.addEventListener('change', renderOrders);
+
+  async function loadOrders() {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      document.getElementById('authNotice')!.style.display = 'block';
+      allOrders = demoOrders;
+      renderOrders();
+      return;
+    }
+
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('*, products(id, title, images, price, profiles(full_name, whatsapp_number))')
+      .eq('buyer_id', user.id)
+      .order('created_at', { ascending: false });
+
+    allOrders = orders?.length ? orders : demoOrders;
+    if (!orders?.length) {
+      document.getElementById('authNotice')!.textContent = '💡 No orders yet — showing demo data.';
+      document.getElementById('authNotice')!.style.display = 'block';
+    }
+
+    renderOrders();
+  }
+
+  loadOrders();
+
+  // ── Realtime subscription ──
+  supabase.auth.getUser().then(({ data: { user } }) => {
+    if (!user) return;
+
+    let realtimeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    async function handleOrderChange() {
+      // Capture snapshot before fetching fresh data
+      const prevStatuses: Record<string, string> = {};
+      allOrders.forEach((o: any) => { prevStatuses[o.id] = o.status; });
+
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('*, products(id, title, images, price, profiles(full_name, whatsapp_number))')
+        .eq('buyer_id', user.id)
+        .order('created_at', { ascending: false });
+
+      allOrders = orders?.length ? orders : allOrders;
+
+      // Check for status changes against the pre-fetch snapshot
+      allOrders.forEach((o: any) => {
+        const prev = prevStatuses[o.id];
+        if (prev && prev !== o.status) {
+          const label = o.status.charAt(0).toUpperCase() + o.status.slice(1);
+          (window as any).showToast?.(
+            `📦 Your order status updated to ${label}!`,
+            'info',
+            4000
+          );
+        }
+      });
+
+      renderOrders();
+    }
+
+    const channel = watchTable(supabase, 'orders', () => {
+      // Debounce: coalesce rapid successive events into one fetch
+      if (realtimeTimer) clearTimeout(realtimeTimer);
+      realtimeTimer = setTimeout(handleOrderChange, 200);
+    });
+
+    window.addEventListener('beforeunload', () => channel.unsubscribe());
+  });
+</script>

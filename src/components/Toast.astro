@@ -1,0 +1,69 @@
+<!-- Toast notification container -->
+<div id="toastContainer" style="position:fixed;bottom:80px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
+<script>
+  const MAX_TOASTS = 3;
+
+  const TYPE_STYLES: Record<string, string> = {
+    info:    'background:#1d4ed8;color:#fff;',
+    success: 'background:#15803d;color:#fff;',
+    warning: 'background:#d97706;color:#fff;',
+    error:   'background:#dc2626;color:#fff;',
+  };
+
+  function showToast(message: string, type: string = 'info', duration: number = 3000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    // Limit to MAX_TOASTS
+    while (container.children.length >= MAX_TOASTS) {
+      container.removeChild(container.firstChild as Node);
+    }
+
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      padding:12px 18px;
+      border-radius:10px;
+      font-size:14px;
+      font-weight:600;
+      max-width:320px;
+      box-shadow:0 4px 16px rgba(0,0,0,.18);
+      opacity:0;
+      transform:translateY(8px);
+      transition:opacity 0.25s ease, transform 0.25s ease;
+      cursor:pointer;
+      ${TYPE_STYLES[type] || TYPE_STYLES.info}
+    `;
+    toast.textContent = message;
+
+    // Click to dismiss
+    toast.addEventListener('click', () => removeToast(toast));
+
+    container.appendChild(toast);
+
+    // Respect prefers-reduced-motion
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      toast.style.opacity = '1';
+      toast.style.transform = 'none';
+    } else {
+      requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+      });
+    }
+
+    const timer = setTimeout(() => removeToast(toast), duration);
+    (toast as any)._timer = timer;
+  }
+
+  function removeToast(toast: HTMLElement) {
+    clearTimeout((toast as any)._timer);
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(8px)';
+    setTimeout(() => toast.parentNode?.removeChild(toast), 300);
+  }
+
+  // Expose globally
+  (window as any).showToast = showToast;
+</script>

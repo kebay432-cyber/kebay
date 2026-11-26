@@ -1,0 +1,405 @@
+---
+---
+<style>
+  /* ── Top bar ── */
+  .header { background: #fff; border-bottom: 1px solid #ebebeb; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+
+  .header-top { display: flex; align-items: center; gap: 16px; padding: 12px 24px; max-width: 1440px; margin: 0 auto; }
+
+  /* Logo */
+  .logo { font-size: 26px; font-weight: 900; letter-spacing: -1.5px; flex-shrink: 0; text-decoration: none; line-height: 1; min-width: 90px; }
+  .logo span:nth-child(1) { color: #e8450a; }
+  .logo span:nth-child(2) { color: #1a7a4a; }
+  .logo span:nth-child(3) { color: #e8450a; }
+  .logo span:nth-child(4) { color: #222; }
+  .logo span:nth-child(5) { color: #1a7a4a; }
+
+  /* Search */
+  .search-wrap { flex: 1; display: flex; align-items: center; border: 2px solid #e8450a; border-radius: 50px; overflow: hidden; max-width: 580px; background: #fff; transition: box-shadow .15s; margin-left: 20px; }
+  .search-wrap:focus-within { box-shadow: 0 0 0 3px rgba(232,69,10,.15); }
+  .search-wrap input { flex: 1; padding: 10px 18px; border: none; outline: none; font-size: 15px; background: transparent; }
+  .search-wrap button { background: #e8450a; color: #fff; padding: 10px 20px; border: none; cursor: pointer; font-size: 17px; border-radius: 0 50px 50px 0; transition: background .15s; }
+  .search-wrap button:hover { background: #c23a08; }
+
+  /* Right icons */
+  .header-icons { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
+  .icon-btn { display: flex; flex-direction: column; align-items: center; padding: 7px 12px; border-radius: 10px; font-size: 11px; color: #444; gap: 3px; position: relative; text-decoration: none; transition: background .15s; cursor: pointer; border: none; background: none; }
+  .icon-btn:hover { background: #f5f5f5; }
+  .icon-btn svg { width: 22px; height: 22px; }
+  .icon-label { font-size: 11px; font-weight: 600; color: #555; }
+  .cart-badge { position: absolute; top: 3px; right: 8px; background: #e8450a; color: #fff; border-radius: 50%; width: 17px; height: 17px; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+  /* ── Secondary nav ── */
+  .header-nav { border-top: 1px solid #f0f0f0; background: #fff; }
+  .header-nav-inner { display: flex; align-items: center; gap: 0; max-width: 1440px; margin: 0 auto; padding: 0 24px; overflow-x: auto; scrollbar-width: none; }
+  .header-nav-inner::-webkit-scrollbar { display: none; }
+  .header-nav-inner a { padding: 9px 14px; font-size: 13px; font-weight: 500; color: #444; white-space: nowrap; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+  .header-nav-inner a:hover { color: #e8450a; border-bottom-color: #e8450a; }
+
+  /* ── Mobile search ── */
+  .mobile-search { padding: 8px 14px 10px; }
+  .mobile-search .search-wrap { max-width: 100%; }
+
+  /* ── Mobile bottom nav ── */
+  .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #ebebeb; z-index: 100; padding: 5px 0 8px; }
+  .bottom-nav-inner { display: flex; justify-content: space-around; max-width: 500px; margin: 0 auto; }
+  .bottom-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 10px; font-size: 10px; font-weight: 600; color: #888; text-decoration: none; }
+  .bottom-nav-item.active { color: #e8450a; }
+  .bottom-nav-item svg { width: 23px; height: 23px; }
+
+  /* ── Slide menu ── */
+  .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; backdrop-filter: blur(2px); }
+  .menu-overlay.open { display: block; }
+  .slide-menu { position: fixed; top: 0; right: 0; bottom: 0; width: 290px; background: #fff; z-index: 201; transform: translateX(100%); transition: transform .25s cubic-bezier(.4,0,.2,1); overflow-y: auto; }
+  .slide-menu.open { transform: translateX(0); }
+  .menu-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #f0f0f0; }
+  .menu-logo { font-size: 22px; font-weight: 900; letter-spacing: -1px; }
+  .menu-close { font-size: 20px; padding: 4px 8px; background: #f5f5f5; border-radius: 50%; border: none; cursor: pointer; color: #444; }
+  .menu-links a { display: flex; align-items: center; gap: 14px; padding: 15px 20px; font-size: 15px; font-weight: 600; border-bottom: 1px solid #f7f7f7; color: #222; text-decoration: none; transition: background .15s; }
+  .menu-links a:hover { background: #fff0eb; color: #e8450a; }
+  .menu-icon { font-size: 20px; width: 28px; text-align: center; }
+  .menu-auth { padding: 20px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px; }
+  .menu-auth a { flex: 1; text-align: center; padding: 11px; border-radius: 50px; font-weight: 700; font-size: 14px; text-decoration: none; }
+  .menu-auth .signin { background: #e8450a; color: #fff; }
+  .menu-auth .register { background: #f5f5f5; color: #333; }
+
+  /* ── Realtime dot ── */
+  .rt-dot { width: 6px; height: 6px; border-radius: 50%; background: #aaa; display: inline-block; margin-left: 6px; vertical-align: middle; transition: background 0.4s; }
+  .rt-dot.connected { background: #22c55e; }
+  @keyframes rt-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .rt-dot.connected { animation: rt-pulse 2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .rt-dot.connected { animation: none; } }
+
+  /* ── Location chip ── */
+  .location-chip { display: flex; align-items: center; gap: 5px; flex-shrink: 0; white-space: nowrap; padding: 6px 10px; border-radius: 8px; transition: background .15s; }
+  .location-chip:hover { background: #f5f5f5; }
+
+  @media (max-width: 768px) {
+    .header-top { padding: 10px 12px; gap: 10px; }
+    .search-wrap { display: none; }
+    .header-nav { display: none; }
+    .location-chip { display: none; }
+    .bottom-nav { display: block; }
+    .icon-label { display: none; }
+    body { padding-bottom: 68px; }
+  }
+  @media (min-width: 769px) {
+    .mobile-search { display: none; }
+    .bottom-nav { display: none; }
+  }
+</style>
+
+<!-- Slide-in Menu -->
+<div class="menu-overlay" id="menuOverlay"></div>
+<div class="slide-menu" id="slideMenu">
+  <div class="menu-header">
+    <span class="menu-logo">
+      <span style="color:#e8450a;">K</span><span style="color:#1a7a4a;">e</span><span style="color:#e8450a;">b</span><span style="color:#222;">a</span><span style="color:#1a7a4a;">y</span>
+    </span>
+    <button class="menu-close" id="menuClose">✕</button>
+  </div>
+  <nav class="menu-links">
+    <a href="/"><span class="menu-icon">🏠</span> Home</a>
+    <a href="/search"><span class="menu-icon">📂</span> All Categories</a>
+    <a href="/search?deals=true"><span class="menu-icon">🏷️</span> Deals</a>
+    <a href="/orders"><span class="menu-icon">📦</span> My Orders</a>
+    <a href="/cart"><span class="menu-icon">🛒</span> Cart</a>
+    <a href="/seller/dashboard"><span class="menu-icon">🏪</span> Seller Dashboard</a>
+    <a href="#help"><span class="menu-icon">❓</span> Help & Contact</a>
+  </nav>
+  <div class="menu-auth" id="menuAuth">
+    <a href="/auth/signin" class="signin">Sign In</a>
+    <a href="/auth/register" class="register">Register</a>
+  </div>
+</div>
+
+<header class="header">
+  <!-- Top row -->
+  <div class="header-top">
+    <!-- Logo with realtime indicator -->
+    <a href="/" class="logo" style="display:flex;align-items:center;">
+      <span>K</span><span>e</span><span>b</span><span>a</span><span>y</span>
+      <span id="rtDot" class="rt-dot" title="Realtime: connecting…"></span>
+    </a>
+
+    <!-- Search -->
+    <form class="search-wrap" action="/search" method="get">
+      <input type="text" name="q" placeholder="Search for anything in Kenya…" autocomplete="off" />
+      <button type="submit" title="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+    </form>
+
+    <!-- Location chip — right of search -->
+    <div class="location-chip" id="locationChip" style="cursor:pointer;position:relative;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <div>
+        <div style="font-size:10px;color:#888;line-height:1;">Deliver to</div>
+        <strong style="font-size:13px;color:#111;" id="locationLabel">Kenya</strong>
+      </div>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+
+      <!-- Dropdown -->
+      <div id="locationMenu" style="display:none;position:absolute;top:calc(100% + 10px);right:0;width:240px;background:#fff;border:1px solid #e5e5e5;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:500;padding:14px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:#111;">Choose your location</div>
+        <div id="cityList" style="display:flex;flex-direction:column;gap:5px;"></div>
+      </div>
+    </div>
+
+    <!-- Right icons -->
+    <div class="header-icons">
+      <a href="/auth/signin" class="icon-btn" id="accountIconBtn">
+        <span id="accountIconInner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </span>
+        <span class="icon-label">Account</span>
+      </a>
+      <a href="/orders" class="icon-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+        <span class="icon-label">Orders</span>
+      </a>
+      <a href="/cart" class="icon-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="cart-badge" id="cartBadge" style="display:none">0</span>
+        <span class="icon-label">Cart</span>
+      </a>
+      <button class="icon-btn" id="menuBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <span class="icon-label">Menu</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile search -->
+  <div class="mobile-search">
+    <form class="search-wrap" action="/search" method="get">
+      <input type="text" name="q" placeholder="Search for anything…" autocomplete="off" />
+      <button type="submit" title="Search">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+    </form>
+  </div>
+
+  <!-- Secondary nav -->
+  <nav class="header-nav">
+    <div class="header-nav-inner">
+      <a href="/search">All</a>
+      <a href="/search?cat=phones">Phones</a>
+      <a href="/search?cat=computers">Computers</a>
+      <a href="/search?cat=electronics">Electronics</a>
+      <a href="/search?cat=fashion">Fashion</a>
+      <a href="/search?cat=home">Home & Garden</a>
+      <a href="/search?cat=motors">Motors</a>
+      <a href="/search?cat=sporting">Sports</a>
+      <a href="/search?cat=gaming">Gaming</a>
+      <a href="/search?deals=true" style="color:#e8450a;font-weight:700;">Deals</a>
+    </div>
+  </nav>
+</header>
+
+<!-- Mobile bottom nav -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a href="/" class="bottom-nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </a>
+    <a href="/search" class="bottom-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search
+    </a>
+    <a href="/orders" class="bottom-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+      Orders
+    </a>
+    <a href="/cart" class="bottom-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      Cart
+    </a>
+    <a href="/auth/signin" class="bottom-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Account
+    </a>
+  </div>
+</nav>
+
+<script>
+  const menuBtn  = document.getElementById('menuBtn');
+  const menuClose = document.getElementById('menuClose');
+  const overlay  = document.getElementById('menuOverlay');
+  const menu     = document.getElementById('slideMenu');
+
+  function openMenu()  { menu?.classList.add('open');    overlay?.classList.add('open'); }
+  function closeMenu() { menu?.classList.remove('open'); overlay?.classList.remove('open'); }
+
+  menuBtn?.addEventListener('click', openMenu);
+  menuClose?.addEventListener('click', closeMenu);
+  overlay?.addEventListener('click', closeMenu);
+
+  function updateCartBadge() {
+    const cart  = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
+    const badge = document.getElementById('cartBadge');
+    if (badge) {
+      const count = cart.reduce((s: number, i: any) => s + (i.quantity || 1), 0);
+      badge.textContent = String(count);
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+  }
+  updateCartBadge();
+  window.addEventListener('kebay:cart-updated', updateCartBadge);
+
+  // ── Location dropdown ──
+  const cities = ['All Kenya','Nairobi','Mombasa','Kisumu','Nakuru','Eldoret','Thika','Nyeri','Machakos'];
+  const cityList = document.getElementById('cityList');
+  const locationLabel = document.getElementById('locationLabel');
+  const locationMenu  = document.getElementById('locationMenu');
+  const locationChip  = document.getElementById('locationChip');
+
+  // Restore saved location
+  const savedCity = localStorage.getItem('kebay_location') || 'Kenya';
+  if (locationLabel) locationLabel.textContent = savedCity;
+
+  // Build city buttons
+  cities.forEach(city => {
+    const btn = document.createElement('button');
+    btn.textContent = '📍 ' + city;
+    btn.style.cssText = 'text-align:left;padding:8px 12px;border-radius:8px;border:1px solid #e5e5e5;background:#f9f9f9;font-size:13px;cursor:pointer;font-weight:500;transition:background .15s;';
+    btn.addEventListener('mouseover', () => { btn.style.background = '#fff0eb'; });
+    btn.addEventListener('mouseout',  () => { btn.style.background = '#f9f9f9'; });
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (locationLabel) locationLabel.textContent = city;
+      localStorage.setItem('kebay_location', city);
+      if (locationMenu) locationMenu.style.display = 'none';
+    });
+    cityList?.appendChild(btn);
+  });
+
+  // Toggle dropdown
+  locationChip?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!locationMenu) return;
+    locationMenu.style.display = locationMenu.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Close on outside click
+  document.addEventListener('click', () => {
+    if (locationMenu) locationMenu.style.display = 'none';
+  });
+
+  // ── Auth state — update menu and account icon ──
+  async function updateAuthState() {
+    try {
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      const url = document.querySelector('meta[name="supa-url"]')?.getAttribute('content') || '';
+      const key = document.querySelector('meta[name="supa-key"]')?.getAttribute('content') || '';
+      if (!url || !key) return;
+
+      const sb = createClient(url, key);
+      const { data: { session } } = await sb.auth.getSession();
+      const menuAuth = document.getElementById('menuAuth');
+      const accountBtn = document.querySelector('.header-icons a[href="/auth/signin"]') as HTMLElement;
+
+      if (session?.user) {
+        const { data: profile } = await sb.from('profiles').select('full_name,role').eq('id', session.user.id).single();
+        const name = profile?.full_name || session.user.email || 'User';
+        const role = profile?.role || localStorage.getItem('kebay_role') || 'buyer';
+        const dashLink = role === 'seller' ? '/seller/dashboard' : role === 'admin' ? '/admin/dashboard' : '/buyer/dashboard';
+        const initial = name.charAt(0).toUpperCase();
+
+        // Update slide-in menu auth section
+        if (menuAuth) {
+          menuAuth.innerHTML = `
+            <div style="padding:4px 0 12px;border-bottom:1px solid #f0f0f0;margin-bottom:8px;">
+              <div style="font-size:13px;color:#888;margin-bottom:2px;">Signed in as</div>
+              <div style="font-weight:700;font-size:15px;color:#111;">${name}</div>
+            </div>
+            <a href="${dashLink}" style="flex:1;text-align:center;padding:11px;border-radius:50px;font-weight:700;font-size:14px;text-decoration:none;background:#f5f5f5;color:#333;">My Account</a>
+            <button id="menuSignOut" style="flex:1;padding:11px;border-radius:50px;font-weight:700;font-size:14px;background:#e8450a;color:#fff;border:none;cursor:pointer;">Sign Out</button>
+          `;
+          document.getElementById('menuSignOut')?.addEventListener('click', async () => {
+            await sb.auth.signOut();
+            localStorage.removeItem('kebay_role');
+            window.location.href = '/';
+          });
+        }
+
+        // Update desktop account icon to show user initial
+        if (accountBtn) {
+          accountBtn.href = dashLink;
+          accountBtn.innerHTML = `
+            <div style="width:28px;height:28px;border-radius:50%;background:#e8450a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;">${initial}</div>
+            <span class="icon-label">${name.split(' ')[0]}</span>
+          `;
+        }
+
+        localStorage.setItem('kebay_role', role);
+      }
+    } catch(e) {
+      // Supabase not configured — keep default state
+    }
+  }
+  updateAuthState();
+
+  // ── Auth state: update menu and account icon ──
+  import { supabase } from '../lib/supabase';
+
+  async function updateAuthUI() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const menuAuth      = document.getElementById('menuAuth')!;
+    const accountBtn    = document.getElementById('accountIconBtn') as HTMLAnchorElement | null;
+    const accountInner  = document.getElementById('accountIconInner');
+
+    if (session) {
+      const name = session.user?.user_metadata?.full_name || session.user?.email || 'User';
+      const initial = name.charAt(0).toUpperCase();
+      const role = localStorage.getItem('kebay_role') || 'buyer';
+      const dashboard = role === 'seller' ? '/seller/dashboard' : '/buyer/dashboard';
+
+      // Update slide menu auth section
+      menuAuth.innerHTML = `
+        <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:13px;font-weight:700;color:#333;padding:4px 0;">👋 Hi, ${name.split(' ')[0]}</div>
+          <a href="${dashboard}" style="flex:1;text-align:center;padding:11px;border-radius:50px;font-weight:700;font-size:14px;text-decoration:none;background:#f5f5f5;color:#333;">My Account</a>
+          <button id="signOutBtn" style="flex:1;padding:11px;border-radius:50px;font-weight:700;font-size:14px;border:none;cursor:pointer;background:#e8450a;color:#fff;">Sign Out</button>
+        </div>`;
+
+      document.getElementById('signOutBtn')?.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        localStorage.removeItem('kebay_role');
+        window.location.reload();
+      });
+
+      // Update desktop account icon — orange circle with initial
+      if (accountBtn) {
+        accountBtn.href = dashboard;
+      }
+      if (accountInner) {
+        accountInner.innerHTML = `<div style="width:22px;height:22px;border-radius:50%;background:#e8450a;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;">${initial}</div>`;
+      }
+    }
+  }
+
+  updateAuthUI();
+
+  // ── Realtime connection dot ──
+  (async () => {
+    try {
+      const channel = supabase.channel('rt-heartbeat');
+      channel.subscribe((status: string) => {
+        const dot = document.getElementById('rtDot');
+        if (!dot) return;
+        if (status === 'SUBSCRIBED') {
+          dot.classList.add('connected');
+          dot.title = 'Realtime: connected';
+        } else {
+          dot.classList.remove('connected');
+          dot.title = `Realtime: ${status.toLowerCase()}`;
+        }
+      });
+      window.addEventListener('beforeunload', () => channel.unsubscribe());
+    } catch (_) {
+      // Supabase not available
+    }
+  })();
+</script>

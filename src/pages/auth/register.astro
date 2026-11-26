@@ -1,0 +1,465 @@
+---
+export const prerender = true;
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+
+const role = Astro.url.searchParams.get('role') || 'buyer';
+---
+export const prerender = true;
+
+<Layout title="Register — Kebay">
+  <Header />
+
+  <style>
+    /* Shared */
+    .auth-wrap { min-height: 80vh; display: flex; align-items: flex-start; justify-content: center; padding: 32px 16px 60px; background: #f3f3f3; }
+
+    /* ── BUYER FORM (unchanged) ── */
+    .buyer-box { width: 100%; max-width: 400px; }
+    .buyer-box .logo-wrap { text-align: center; margin-bottom: 20px; }
+    .buyer-box .logo-text { font-size: 36px; font-weight: 900; letter-spacing: -1px; text-decoration: none; }
+    .buyer-box form { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 24px; }
+    .buyer-box label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+    .buyer-box input { width: 100%; padding: 7px 10px; border: 1px solid #aaa; border-radius: 3px; font-size: 14px; outline: none; margin-bottom: 14px; }
+    .buyer-box input:focus { border-color: #e8450a; box-shadow: 0 0 0 2px rgba(232,69,10,.15); }
+    .buyer-box .submit-btn { width: 100%; padding: 10px; background: #e8450a; color: #fff; border: none; border-radius: 50px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .buyer-box .submit-btn:hover { background: #c23a08; }
+    .buyer-box .terms { font-size: 12px; color: #555; margin-top: 14px; line-height: 1.5; }
+    .buyer-box .signin-link { text-align: center; margin-top: 18px; font-size: 14px; }
+    .buyer-box .signin-link a { color: #e8450a; font-weight: 700; }
+
+    /* ── SELLER FORM (Amazon-style) ── */
+    .seller-wrap { width: 100%; max-width: 900px; }
+    .seller-wrap .logo-wrap { text-align: center; margin-bottom: 24px; }
+    .seller-steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 32px; }
+    .seller-step { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .seller-step-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; border: 2px solid #ddd; color: #aaa; background: #fff; }
+    .seller-step.active .seller-step-num { border-color: #e8450a; color: #e8450a; }
+    .seller-step.done .seller-step-num { background: #e8450a; border-color: #e8450a; color: #fff; }
+    .seller-step-label { font-size: 11px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: .4px; }
+    .seller-step.active .seller-step-label { color: #e8450a; }
+    .seller-step.done .seller-step-label { color: #666; }
+    .step-line { width: 60px; height: 2px; background: #ddd; margin-bottom: 18px; }
+    .step-line.done { background: #e8450a; }
+
+    .seller-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .seller-panel { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 24px; }
+    .seller-panel h3 { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .seller-panel .panel-desc { font-size: 13px; color: #666; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 14px; }
+    .seller-panel label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; margin-top: 12px; }
+    .seller-panel label:first-of-type { margin-top: 0; }
+    .seller-panel input, .seller-panel select { width: 100%; padding: 8px 10px; border: 1px solid #aaa; border-radius: 3px; font-size: 14px; outline: none; }
+    .seller-panel input:focus, .seller-panel select:focus { border-color: #e8450a; box-shadow: 0 0 0 2px rgba(232,69,10,.15); }
+    .seller-panel .helper { font-size: 12px; color: #888; margin-top: 3px; }
+    .seller-next-btn { margin-top: 20px; width: 100%; padding: 11px; background: #e8450a; color: #fff; border: none; border-radius: 3px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .seller-next-btn:hover { background: #c23a08; }
+    .seller-next-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* step panels */
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+
+    /* summary box */
+    .summary-box { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 20px; margin-top: 20px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+    .summary-row:last-child { border: none; }
+    .summary-label { color: #888; }
+    .summary-val { font-weight: 700; }
+
+    @media (max-width: 768px) {
+      .seller-panels { grid-template-columns: 1fr; }
+      .step-line { width: 30px; }
+    }
+  </style>
+
+  <main>
+    <div class="auth-wrap">
+
+      <!-- ══ BUYER FORM ══ -->
+      <div class="buyer-box" id="buyerForm" style={role === 'seller' ? 'display:none' : ''}>
+        <div class="logo-wrap">
+          <a href="/" class="logo-text" style="text-decoration:none;">
+            <span style="color:#e8450a;">K</span><span style="color:#1a7a4a;">e</span><span style="color:#e8450a;">b</span><span style="color:#333;">a</span><span style="color:#1a7a4a;">y</span>
+          </a>
+          <p style="color:#666;font-size:14px;margin-top:6px;">Create your buyer account</p>
+          <p style="font-size:13px;margin-top:8px;">
+            Are you a seller? <a href="/auth/register?role=seller" style="color:#e8450a;font-weight:700;">Register here →</a>
+          </p>
+        </div>
+
+        <div id="buyerError" style="display:none;padding:10px 14px;background:#fff5f5;color:#c0392b;border:1px solid #fcc;border-radius:4px;font-size:13px;margin-bottom:14px;"></div>
+        <div id="buyerSuccess" style="display:none;padding:10px 14px;background:#f0fff4;color:#1a7a4a;border:1px solid #c6f6d5;border-radius:4px;font-size:13px;margin-bottom:14px;"></div>
+
+        <form id="buyerRegForm">
+          <label>Your name</label>
+          <input id="b_name" type="text" placeholder="First and last name" required />
+          <label>Email</label>
+          <input id="b_email" type="email" placeholder="you@email.com" required />
+          <label>Password</label>
+          <input id="b_pass" type="password" placeholder="At least 6 characters" required minlength="6" />
+          <label>WhatsApp number <span style="font-weight:400;color:#888;">(optional)</span></label>
+          <input id="b_wa" type="tel" placeholder="e.g. 0712 345 678" />
+          <button type="submit" id="buyerSubmit" class="submit-btn">Create Account</button>
+          <p class="terms">
+            By creating an account you agree to Kebay's <a href="#" style="color:#e8450a;">Conditions of Use</a> and <a href="#" style="color:#e8450a;">Privacy Notice</a>.
+          </p>
+        </form>
+        <div class="signin-link">
+          Already have an account? <a href="/auth/signin">Sign in →</a>
+        </div>
+      </div>
+
+      <!-- ══ SELLER FORM (Amazon-style) ══ -->
+      <div class="seller-wrap" id="sellerForm" style={role !== 'seller' ? 'display:none' : ''}>
+        <div class="logo-wrap">
+          <a href="/" style="font-size:36px;font-weight:900;letter-spacing:-1px;text-decoration:none;">
+            <span style="color:#e8450a;">K</span><span style="color:#1a7a4a;">e</span><span style="color:#e8450a;">b</span><span style="color:#333;">a</span><span style="color:#1a7a4a;">y</span>
+          </a>
+          <p style="color:#444;font-size:15px;font-weight:600;margin-top:8px;">Seller Registration</p>
+          <p style="font-size:13px;color:#888;margin-top:4px;">
+            Buyer? <a href="/auth/register?role=buyer" style="color:#e8450a;font-weight:700;">Register here →</a>
+          </p>
+        </div>
+
+        <!-- Step indicator -->
+        <div class="seller-steps">
+          <div class="seller-step active" id="sStep1">
+            <div class="seller-step-num">1</div>
+            <div class="seller-step-label">Account</div>
+          </div>
+          <div class="step-line" id="sLine1"></div>
+          <div class="seller-step" id="sStep2">
+            <div class="seller-step-num">2</div>
+            <div class="seller-step-label">Business</div>
+          </div>
+          <div class="step-line" id="sLine2"></div>
+          <div class="seller-step" id="sStep3">
+            <div class="seller-step-num">3</div>
+            <div class="seller-step-label">Contact</div>
+          </div>
+          <div class="step-line" id="sLine3"></div>
+          <div class="seller-step" id="sStep4">
+            <div class="seller-step-num">4</div>
+            <div class="seller-step-label">Review</div>
+          </div>
+        </div>
+
+        <div id="sellerError" style="display:none;padding:10px 14px;background:#fff5f5;color:#c0392b;border:1px solid #fcc;border-radius:4px;font-size:13px;margin-bottom:16px;"></div>
+
+        <!-- Step 1: Account info -->
+        <div class="step-panel active" id="panel1">
+          <div class="seller-panels">
+            <div class="seller-panel">
+              <h3>Account Information</h3>
+              <p class="panel-desc">Create your seller login credentials</p>
+              <label>Full name</label>
+              <input id="s_name" type="text" placeholder="Your full name" />
+              <label>Email address</label>
+              <input id="s_email" type="email" placeholder="you@email.com" />
+              <label>Password</label>
+              <input id="s_pass" type="password" placeholder="At least 6 characters" />
+              <div class="helper">Use a strong password with letters, numbers and symbols.</div>
+              <button class="seller-next-btn" onclick="goStep(2)">Next: Business Info →</button>
+            </div>
+            <div class="seller-panel" style="background:#fafafa;">
+              <h3>Why sell on Kebay?</h3>
+              <p class="panel-desc">Join thousands of sellers across Kenya</p>
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <span style="font-size:24px;">📲</span>
+                  <div><strong style="font-size:14px;">WhatsApp-powered</strong><br><span style="font-size:13px;color:#666;">Buyers contact you directly on WhatsApp — no middleman.</span></div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <span style="font-size:24px;">🆓</span>
+                  <div><strong style="font-size:14px;">Free to list</strong><br><span style="font-size:13px;color:#666;">No listing fees. No monthly charges. Keep all your earnings.</span></div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <span style="font-size:24px;">🇰🇪</span>
+                  <div><strong style="font-size:14px;">Built for Kenya</strong><br><span style="font-size:13px;color:#666;">KSh pricing, local categories, Kenyan buyers.</span></div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <span style="font-size:24px;">📦</span>
+                  <div><strong style="font-size:14px;">Auto product ID</strong><br><span style="font-size:13px;color:#666;">Every listing gets a unique link shared directly with buyers.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Business info -->
+        <div class="step-panel" id="panel2">
+          <div class="seller-panels">
+            <div class="seller-panel">
+              <h3>Business Information</h3>
+              <p class="panel-desc">Tell us about what you sell</p>
+              <label>Business / Store name</label>
+              <input id="s_business" type="text" placeholder="e.g. TechHub Kenya" />
+              <div class="helper">This is shown to buyers on your listings.</div>
+              <label>Business type</label>
+              <select id="s_biztype">
+                <option value="">Select type…</option>
+                <option value="individual">Individual / Personal</option>
+                <option value="small_business">Small Business</option>
+                <option value="company">Registered Company</option>
+              </select>
+              <label>Main category you sell in</label>
+              <select id="s_category">
+                <option value="">Select category…</option>
+                <option value="phones">📱 Phones</option>
+                <option value="computers">💻 Computers</option>
+                <option value="electronics">⚡ Electronics</option>
+                <option value="fashion">👗 Fashion</option>
+                <option value="home">🏠 Home & Garden</option>
+                <option value="motors">🚗 Motors</option>
+                <option value="sporting">⚽ Sports</option>
+                <option value="gaming">🎮 Gaming</option>
+                <option value="other">Other</option>
+              </select>
+              <button class="seller-next-btn" onclick="goStep(3)">Next: Contact Details →</button>
+            </div>
+            <div class="seller-panel" style="background:#fafafa;">
+              <h3>Tips for a great store</h3>
+              <p class="panel-desc">Help buyers find and trust you</p>
+              <div style="font-size:13px;color:#555;line-height:1.8;">
+                ✅ Use your real business name<br>
+                ✅ Add clear product photos<br>
+                ✅ Write honest descriptions<br>
+                ✅ Respond quickly on WhatsApp<br>
+                ✅ Keep stock count accurate<br>
+                ✅ Price fairly in KSh
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Contact info -->
+        <div class="step-panel" id="panel3">
+          <div class="seller-panels">
+            <div class="seller-panel">
+              <h3>Contact Information</h3>
+              <p class="panel-desc">How buyers will reach you</p>
+              <label>WhatsApp number <span style="color:#e8450a;">*</span></label>
+              <input id="s_wa" type="tel" placeholder="e.g. 0712 345 678" />
+              <div class="helper">Required — buyers click Buy and are sent to this number automatically.</div>
+              <label>Location / Town</label>
+              <input id="s_location" type="text" placeholder="e.g. Nairobi, Mombasa, Kisumu" />
+              <div class="helper">Helps buyers know where you're based for delivery.</div>
+              <button class="seller-next-btn" onclick="goStep(4)">Next: Review & Submit →</button>
+            </div>
+            <div class="seller-panel" style="background:#fafafa;">
+              <h3>WhatsApp Buy Flow</h3>
+              <p class="panel-desc">How the buying process works</p>
+              <div style="display:flex;flex-direction:column;gap:12px;font-size:13px;color:#555;">
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <span style="background:#e8450a;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">1</span>
+                  Buyer finds your product and clicks <strong>Buy on WhatsApp</strong>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <span style="background:#e8450a;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">2</span>
+                  WhatsApp opens with a pre-filled message including the product name and link
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <span style="background:#e8450a;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">3</span>
+                  You receive the message on <strong>your WhatsApp number</strong>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <span style="background:#1a7a4a;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">✓</span>
+                  Agree on delivery and payment directly — no commission
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Review & submit -->
+        <div class="step-panel" id="panel4">
+          <div class="seller-panels">
+            <div class="seller-panel">
+              <h3>Review Your Details</h3>
+              <p class="panel-desc">Confirm everything looks correct before submitting</p>
+              <div class="summary-box">
+                <div class="summary-row"><span class="summary-label">Name</span><span class="summary-val" id="rev_name">—</span></div>
+                <div class="summary-row"><span class="summary-label">Email</span><span class="summary-val" id="rev_email">—</span></div>
+                <div class="summary-row"><span class="summary-label">Store Name</span><span class="summary-val" id="rev_business">—</span></div>
+                <div class="summary-row"><span class="summary-label">Business Type</span><span class="summary-val" id="rev_biztype">—</span></div>
+                <div class="summary-row"><span class="summary-label">Category</span><span class="summary-val" id="rev_category">—</span></div>
+                <div class="summary-row"><span class="summary-label">WhatsApp</span><span class="summary-val" id="rev_wa">—</span></div>
+                <div class="summary-row"><span class="summary-label">Location</span><span class="summary-val" id="rev_location">—</span></div>
+              </div>
+              <p style="font-size:12px;color:#888;margin-top:12px;line-height:1.6;">
+                By registering you agree to Kebay's <a href="#" style="color:#e8450a;">Seller Agreement</a> and <a href="#" style="color:#e8450a;">Privacy Policy</a>.
+              </p>
+              <button class="seller-next-btn" id="sellerSubmit" onclick="submitSeller()">
+                Register as Seller
+              </button>
+            </div>
+            <div class="seller-panel" style="background:#fafafa;">
+              <h3>What happens next?</h3>
+              <p class="panel-desc">After you register</p>
+              <div style="font-size:13px;color:#555;line-height:2;">
+                ✅ Your seller account is created<br>
+                ✅ You can list products immediately<br>
+                ✅ Each product gets a unique Kebay link<br>
+                ✅ Buyers contact you on WhatsApp<br>
+                ✅ Manage everything from your dashboard
+              </div>
+              <div style="margin-top:16px;padding:12px;background:#fff0eb;border-radius:4px;font-size:13px;color:#e8450a;">
+                <strong>Need to change something?</strong><br>
+                <button onclick="goStep(1)" style="background:none;border:none;color:#e8450a;cursor:pointer;font-size:13px;text-decoration:underline;padding:0;margin-top:4px;">← Go back and edit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  // ── Role toggle via URL ──
+  const urlRole = new URLSearchParams(window.location.search).get('role') || 'buyer';
+  if (urlRole === 'seller') {
+    document.getElementById('buyerForm')!.style.display = 'none';
+    document.getElementById('sellerForm')!.style.display = 'block';
+  }
+
+  // ── Seller step navigation ──
+  let currentStep = 1;
+
+  (window as any).goStep = (step: number) => {
+    // Validate before advancing
+    if (step > currentStep) {
+      const err = document.getElementById('sellerError')!;
+      err.style.display = 'none';
+
+      if (currentStep === 1) {
+        const name  = (document.getElementById('s_name') as HTMLInputElement).value.trim();
+        const email = (document.getElementById('s_email') as HTMLInputElement).value.trim();
+        const pass  = (document.getElementById('s_pass') as HTMLInputElement).value;
+        if (!name || !email || !pass) { err.textContent = 'Please fill in all fields.'; err.style.display = 'block'; return; }
+        if (pass.length < 6) { err.textContent = 'Password must be at least 6 characters.'; err.style.display = 'block'; return; }
+      }
+      if (currentStep === 2) {
+        const biz = (document.getElementById('s_business') as HTMLInputElement).value.trim();
+        if (!biz) { err.textContent = 'Please enter your business / store name.'; err.style.display = 'block'; return; }
+      }
+      if (currentStep === 3) {
+        const wa = (document.getElementById('s_wa') as HTMLInputElement).value.trim();
+        if (!wa) { err.textContent = 'WhatsApp number is required.'; err.style.display = 'block'; return; }
+      }
+    }
+
+    // Fill review panel
+    if (step === 4) {
+      document.getElementById('rev_name')!.textContent     = (document.getElementById('s_name') as HTMLInputElement).value;
+      document.getElementById('rev_email')!.textContent    = (document.getElementById('s_email') as HTMLInputElement).value;
+      document.getElementById('rev_business')!.textContent = (document.getElementById('s_business') as HTMLInputElement).value;
+      document.getElementById('rev_biztype')!.textContent  = (document.getElementById('s_biztype') as HTMLSelectElement).value || '—';
+      document.getElementById('rev_category')!.textContent = (document.getElementById('s_category') as HTMLSelectElement).value || '—';
+      document.getElementById('rev_wa')!.textContent       = (document.getElementById('s_wa') as HTMLInputElement).value;
+      document.getElementById('rev_location')!.textContent = (document.getElementById('s_location') as HTMLInputElement).value || '—';
+    }
+
+    // Hide all panels, show target
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById(`panel${i}`)!.classList.toggle('active', i === step);
+      const stepEl = document.getElementById(`sStep${i}`)!;
+      stepEl.classList.remove('active', 'done');
+      if (i < step) stepEl.classList.add('done');
+      if (i === step) stepEl.classList.add('active');
+      if (i < 4) {
+        document.getElementById(`sLine${i}`)!.classList.toggle('done', i < step);
+      }
+    }
+    currentStep = step;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ── Seller submit ──
+  (window as any).submitSeller = async () => {
+    const btn = document.getElementById('sellerSubmit') as HTMLButtonElement;
+    const err = document.getElementById('sellerError')!;
+    btn.textContent = 'Creating account…'; btn.disabled = true; err.style.display = 'none';
+
+    const email = (document.getElementById('s_email') as HTMLInputElement).value.trim();
+    const pass  = (document.getElementById('s_pass') as HTMLInputElement).value;
+    const name  = (document.getElementById('s_name') as HTMLInputElement).value.trim();
+    const biz   = (document.getElementById('s_business') as HTMLInputElement).value.trim();
+    let wa      = (document.getElementById('s_wa') as HTMLInputElement).value.trim().replace(/[\s-]/g, '');
+    if (wa.startsWith('07') || wa.startsWith('01')) wa = '254' + wa.slice(1);
+    else if (wa.startsWith('+')) wa = wa.slice(1);
+
+    const { data, error } = await supabase.auth.signUp({
+      email, password: pass,
+      options: { data: { full_name: name, whatsapp_number: wa, role: 'seller', business_name: biz } }
+    });
+
+    if (error) {
+      let msg = error.message;
+      if (msg.includes('already registered') || msg.includes('already been registered')) msg = 'An account with this email already exists. <a href="/auth/signin" style="color:#c0392b;font-weight:700;">Sign in instead →</a>';
+      err.innerHTML = msg; err.style.display = 'block';
+      btn.textContent = 'Register as Seller'; btn.disabled = false;
+      return;
+    }
+
+    if (data.user) {
+      await supabase.from('profiles').upsert({ id: data.user.id, full_name: name, whatsapp_number: wa, role: 'seller' });
+    }
+
+    btn.textContent = '✅ Registered!';
+    if (data.session) {
+      localStorage.setItem('kebay_role', 'seller');
+      window.location.href = '/seller/dashboard';
+    } else {
+      btn.textContent = '✅ Check your email to confirm, then sign in.';
+      setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
+    }
+  };
+
+  // ── Buyer submit ──
+  document.getElementById('buyerRegForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('buyerSubmit') as HTMLButtonElement;
+    const err = document.getElementById('buyerError')!;
+    const suc = document.getElementById('buyerSuccess')!;
+
+    const name  = (document.getElementById('b_name') as HTMLInputElement).value.trim();
+    const email = (document.getElementById('b_email') as HTMLInputElement).value.trim();
+    const pass  = (document.getElementById('b_pass') as HTMLInputElement).value;
+    let wa      = (document.getElementById('b_wa') as HTMLInputElement).value.trim().replace(/[\s-]/g, '');
+    if (wa.startsWith('07') || wa.startsWith('01')) wa = '254' + wa.slice(1);
+    else if (wa.startsWith('+')) wa = wa.slice(1);
+
+    btn.textContent = 'Creating account…'; btn.disabled = true; err.style.display = 'none';
+
+    const { data, error } = await supabase.auth.signUp({
+      email, password: pass,
+      options: { data: { full_name: name, whatsapp_number: wa, role: 'buyer' } }
+    });
+
+    if (error) {
+      let msg = error.message;
+      if (msg.includes('already registered') || msg.includes('already been registered')) msg = 'An account with this email already exists. <a href="/auth/signin" style="color:#c0392b;font-weight:700;">Sign in instead →</a>';
+      err.innerHTML = msg; err.style.display = 'block';
+      btn.textContent = 'Create Account'; btn.disabled = false;
+      return;
+    }
+
+    if (data.user) {
+      await supabase.from('profiles').upsert({ id: data.user.id, full_name: name, whatsapp_number: wa, role: 'buyer' });
+    }
+
+    if (data.session) {
+      localStorage.setItem('kebay_role', 'buyer');
+      suc.textContent = '✅ Account created! Redirecting…'; suc.style.display = 'block';
+      setTimeout(() => { window.location.href = '/'; }, 1200);
+    } else {
+      suc.textContent = '✅ Account created! Check your email to confirm.'; suc.style.display = 'block';
+      btn.textContent = '✅ Done!';
+      setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
+    }
+  });
+</script>

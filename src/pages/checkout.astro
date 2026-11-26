@@ -1,0 +1,230 @@
+---
+export const prerender = true;
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+export const prerender = true;
+
+<Layout title="Checkout — Kebay">
+  <Header />
+
+  <style>
+    .checkout-layout { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:flex-start; }
+    .card { background:#fff; border:1px solid #e5e5e5; border-radius:14px; padding:24px; margin-bottom:16px; }
+    .form-input { width:100%; padding:10px 13px; border:1.5px solid #e5e5e5; border-radius:8px; font-size:14px; outline:none; box-sizing:border-box; }
+    .form-input:focus { border-color:#e8450a; }
+    @media(max-width:768px) {
+      .checkout-layout { grid-template-columns:1fr; }
+    }
+  </style>
+
+  <main>
+    <div class="container" style="padding-top:24px;padding-bottom:60px;max-width:900px;">
+      <h1 style="font-size:22px;font-weight:800;margin-bottom:20px;">🛍️ Checkout</h1>
+
+      <!-- Success banner (shown after all orders sent) -->
+      <div id="successBanner" style="display:none;padding:16px 20px;background:#dcfce7;border:1px solid #86efac;border-radius:12px;margin-bottom:20px;font-size:15px;font-weight:700;color:#15803d;">
+        ✅ Order sent! Redirecting to your orders…
+      </div>
+
+      <!-- Empty cart -->
+      <div id="emptyCart" style="display:none;text-align:center;padding:60px 20px;">
+        <div style="font-size:56px;margin-bottom:12px;">🛒</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Your cart is empty</div>
+        <a href="/search" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">Shop Now</a>
+      </div>
+
+      <div id="checkoutContent" class="checkout-layout">
+
+        <!-- LEFT: Order Summary -->
+        <div>
+          <div class="card">
+            <h2 style="font-size:16px;font-weight:800;margin-bottom:16px;">📦 Order Summary</h2>
+            <div id="summaryGroups"></div>
+            <div style="border-top:2px solid #e5e5e5;margin-top:12px;padding-top:12px;">
+              <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;">
+                <span>Grand Total</span>
+                <span id="grandTotalSummary" style="color:#e8450a;"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Buyer Details -->
+        <div>
+          <div class="card">
+            <h2 style="font-size:16px;font-weight:800;margin-bottom:16px;">👤 Your Details</h2>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">FULL NAME</label>
+              <input id="buyerName" type="text" class="form-input" placeholder="Your full name" />
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">PHONE NUMBER</label>
+              <input id="buyerPhone" type="tel" class="form-input" placeholder="e.g. 0712345678" />
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">DELIVERY ADDRESS</label>
+              <textarea id="buyerAddress" class="form-input" rows="2" placeholder="Street, estate, town"></textarea>
+            </div>
+            <div style="margin-bottom:20px;">
+              <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">NOTES TO SELLER (optional)</label>
+              <textarea id="buyerNotes" class="form-input" rows="2" placeholder="Any special instructions…"></textarea>
+            </div>
+          </div>
+
+          <!-- Per-seller send buttons -->
+          <div id="sellerButtons"></div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+
+  let currentUser: any = null;
+  let sellerGroupsData: Record<string, any> = {};
+
+  async function init() {
+    const { data: { user } } = await supabase.auth.getUser();
+    currentUser = user;
+
+    if (user) {
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (profile?.full_name) (document.getElementById('buyerName') as HTMLInputElement).value = profile.full_name;
+      if (profile?.whatsapp_number) (document.getElementById('buyerPhone') as HTMLInputElement).value = profile.whatsapp_number;
+    }
+
+    renderCheckout();
+  }
+
+  function renderCheckout() {
+    const cart: any[] = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
+
+    if (cart.length === 0) {
+      document.getElementById('emptyCart')!.style.display = 'block';
+      document.getElementById('checkoutContent')!.style.display = 'none';
+      return;
+    }
+
+    // Group by seller
+    sellerGroupsData = {};
+    cart.forEach((item: any) => {
+      const key = item.sellerId || '__other__';
+      if (!sellerGroupsData[key]) {
+        sellerGroupsData[key] = { name: item.sellerName || 'Seller', wa: item.sellerWa || '', items: [] };
+      }
+      sellerGroupsData[key].items.push(item);
+    });
+
+    let grandTotal = 0;
+    const summaryEl = document.getElementById('summaryGroups')!;
+    const buttonsEl = document.getElementById('sellerButtons')!;
+
+    summaryEl.innerHTML = Object.entries(sellerGroupsData).map(([key, group]: [string, any]) => {
+      const sellerTotal = group.items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+      grandTotal += sellerTotal;
+      return `
+        <div style="margin-bottom:16px;">
+          <div style="font-weight:800;font-size:14px;margin-bottom:8px;color:#888;">🏪 ${group.name}</div>
+          ${group.items.map((item: any) => `
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+              <img src="${item.image}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;background:#f5f5f5;flex-shrink:0;" />
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.title}</div>
+                <div style="font-size:12px;color:#888;">x${item.quantity}</div>
+              </div>
+              <div style="font-size:14px;font-weight:700;flex-shrink:0;">${ksh(item.price * item.quantity)}</div>
+            </div>`).join('')}
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding-top:8px;border-top:1px solid #f0f0f0;">
+            <span>Subtotal (${group.name})</span>
+            <span>${ksh(sellerTotal)}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('grandTotalSummary')!.textContent = ksh(grandTotal);
+
+    buttonsEl.innerHTML = Object.entries(sellerGroupsData).map(([key, group]: [string, any]) => {
+      const sellerTotal = group.items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+      return `
+        <div class="card" style="margin-bottom:12px;">
+          <div style="font-weight:800;font-size:14px;margin-bottom:12px;">💬 Order from ${group.name}</div>
+          <button onclick="window._sendOrder('${key}')"
+            style="width:100%;padding:14px;background:#25D366;color:#fff;border:none;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;">
+            Send WhatsApp Order to ${group.name}
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  (window as any)._sendOrder = async (sellerKey: string) => {
+    const name = (document.getElementById('buyerName') as HTMLInputElement).value.trim();
+    const phone = (document.getElementById('buyerPhone') as HTMLInputElement).value.trim();
+    const address = (document.getElementById('buyerAddress') as HTMLTextAreaElement).value.trim();
+    const notes = (document.getElementById('buyerNotes') as HTMLTextAreaElement).value.trim();
+
+    if (!name || !phone) {
+      alert('Please fill in your name and phone number.');
+      return;
+    }
+
+    const group = sellerGroupsData[sellerKey];
+    const sellerTotal = group.items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+
+    const lines = group.items.map((i: any) =>
+      `Hi ${group.name}, I'd like to buy: ${i.title} (KSh ${i.price.toLocaleString('en-KE')}) — Kebay link: https://kebay.co.ke/product/${i.id}${i.quantity > 1 ? ` (qty: ${i.quantity})` : ''}`
+    ).join('\n');
+
+    const msg = `${lines}\n\nTotal: ${ksh(sellerTotal)}\nName: ${name}\nPhone: ${phone}\nAddress: ${address || 'TBD'}${notes ? '\nNotes: ' + notes : ''}`;
+
+    // Save orders to Supabase (skip demo products — they have no real UUIDs)
+    if (currentUser) {
+      for (const item of group.items) {
+        const isDemo = item.id?.startsWith('demo') || sellerKey?.startsWith('__');
+        if (!isDemo) {
+          await supabase.from('orders').insert({
+            buyer_id: currentUser.id,
+            seller_id: sellerKey,
+            product_id: item.id,
+            quantity: item.quantity,
+            status: 'pending',
+            whatsapp_message_sent: true,
+          });
+        }
+      }
+    }
+
+    if (group.wa) {
+      window.open(`https://wa.me/${group.wa}?text=${encodeURIComponent(msg)}`, '_blank');
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    // Check if all sellers sent
+    const btn = document.querySelector(`[onclick="window._sendOrder('${sellerKey}')"]`) as HTMLElement;
+    if (btn) {
+      btn.textContent = '✅ Sent!';
+      btn.style.background = '#1a7a4a';
+      btn.setAttribute('disabled', 'true');
+    }
+
+    const allBtns = document.querySelectorAll('[onclick^="window._sendOrder"]');
+    const allSent = Array.from(allBtns).every(b => (b as HTMLElement).textContent?.includes('✅'));
+    if (allSent) {
+      localStorage.removeItem('kebay_cart');
+      window.dispatchEvent(new Event('kebay:cart-updated'));
+      document.getElementById('successBanner')!.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => { window.location.href = '/orders?success=1'; }, 2000);
+    }
+  };
+
+  init();
+</script>

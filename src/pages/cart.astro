@@ -1,0 +1,289 @@
+---
+export const prerender = true;
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+const demoRecommended = [
+  { id:'demo-1', title:'Samsung Galaxy A55 5G', price:45000, image:'https://picsum.photos/seed/phone1/400/400' },
+  { id:'demo-2', title:'HP Laptop 15s Intel i5', price:68000, image:'https://picsum.photos/seed/laptop1/400/400' },
+  { id:'demo-3', title:'Nike Air Max 270', price:12000, image:'https://picsum.photos/seed/shoes1/400/400' },
+  { id:'demo-4', title:'Sony WH-1000XM5', price:35000, image:'https://picsum.photos/seed/audio1/400/400' },
+];
+function kshServer(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+---
+export const prerender = true;
+
+<Layout title="Cart — Kebay">
+  <Header />
+  <main>
+    <div class="container" style="padding-top:20px;padding-bottom:48px;max-width:760px;">
+      <h1 style="font-size:22px;font-weight:800;margin-bottom:20px;">🛒 Your Cart</h1>
+
+      <!-- Empty state -->
+      <div id="cartEmpty" style="display:none;">
+        <div style="text-align:center;padding:40px 20px 24px;">
+          <div style="font-size:56px;margin-bottom:12px;">🛒</div>
+          <div style="font-size:18px;font-weight:700;color:#333;margin-bottom:6px;">Your cart is empty</div>
+          <p style="color:#888;margin-bottom:24px;">Browse products and add items to get started.</p>
+          <a href="/search" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">Shop Now</a>
+        </div>
+
+        <!-- Recommended products -->
+        <div style="margin-top:8px;">
+          <h3 style="font-size:16px;font-weight:800;margin-bottom:14px;">You might like</h3>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;" id="recommendedGrid">
+            {demoRecommended.map(p => (
+              <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;overflow:hidden;">
+                <img src={p.image} alt={p.title} style="width:100%;height:140px;object-fit:cover;background:#f5f5f5;" />
+                <div style="padding:12px;">
+                  <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{p.title}</div>
+                  <div style="font-weight:900;font-size:15px;color:#e8450a;margin:4px 0;">{kshServer(p.price)}</div>
+                  <button class="add-rec-btn" data-id={p.id} data-title={p.title} data-price={String(p.price)} data-image={p.image}
+                    style="width:100%;padding:8px;background:#111;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;">
+                    🛒 Add to Cart
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart content -->
+      <div id="cartContent">
+        <div id="sellerGroups"></div>
+
+        <div id="cartSummary" style="border-top:2px solid #e5e5e5;padding-top:20px;margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:16px;margin-bottom:4px;">
+            <span>Grand Total (<span id="itemCount">0</span> items)</span>
+            <span style="font-weight:900;font-size:20px;color:#111;" id="grandTotal">KSh 0</span>
+          </div>
+          <p style="font-size:13px;color:#888;margin-bottom:20px;">Delivery arranged directly with each seller via WhatsApp.</p>
+          <a href="/checkout"
+            style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:#e8450a;color:#fff;padding:16px;border-radius:50px;font-size:17px;font-weight:700;text-decoration:none;box-sizing:border-box;">
+            🛍️ Proceed to Checkout
+          </a>
+          <button id="checkoutAllBtn"
+            style="display:none;width:100%;background:#25D366;color:#fff;padding:16px;border-radius:50px;font-size:16px;font-weight:700;cursor:pointer;border:none;box-sizing:border-box;">
+            💬 Checkout All (WhatsApp)
+          </button>
+          <a href="/search"
+            style="display:block;text-align:center;margin-top:12px;padding:14px;border-radius:50px;background:#f5f5f5;color:#333;font-weight:600;font-size:15px;">
+            Continue Shopping
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  @media(max-width:480px) {
+    #recommendedGrid { grid-template-columns:repeat(2,1fr) !important; }
+  }
+</style>
+
+<script>
+  function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+
+  function renderCart() {
+    const cart: any[] = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
+    const empty = document.getElementById('cartEmpty')!;
+    const content = document.getElementById('cartContent')!;
+    const groups = document.getElementById('sellerGroups')!;
+    const summary = document.getElementById('cartSummary')!;
+
+    if (cart.length === 0) {
+      empty.style.display = 'block';
+      content.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    content.style.display = 'block';
+
+    // Group items by seller
+    const sellerMap: Record<string, { name: string; wa: string; items: any[] }> = {};
+    cart.forEach((item: any) => {
+      const key = item.sellerId || '__other__';
+      if (!sellerMap[key]) {
+        sellerMap[key] = {
+          name: item.sellerName || 'Other Sellers',
+          wa: item.sellerWa || '',
+          items: [],
+        };
+      }
+      sellerMap[key].items.push(item);
+    });
+
+    let grandTotal = 0;
+    let totalItems = 0;
+
+    groups.innerHTML = Object.entries(sellerMap).map(([sellerId, group]) => {
+      const sellerTotal = group.items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+      grandTotal += sellerTotal;
+      totalItems += group.items.reduce((s: number, i: any) => s + i.quantity, 0);
+
+      const itemLines = group.items.map((i: any) => `• ${i.title} x${i.quantity} — ${ksh(i.price * i.quantity)}`).join('\n');
+      const waMsg = group.wa
+        ? `https://wa.me/${group.wa}?text=${encodeURIComponent(`Hi ${group.name}, I'd like to order from Kebay:\n${itemLines}\nTotal: ${ksh(sellerTotal)}\n\nPlease confirm.`)}`
+        : '#';
+
+      const itemsHtml = group.items.map((item: any, i: number) => {
+        // Find global index in cart for qty changes
+        const globalIdx = cart.findIndex((c: any) => c.id === item.id && c.sellerId === item.sellerId);
+        return `
+          <div style="display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #f0f0f0;">
+            <img src="${item.image}" alt="${item.title}" data-product-id="${item.id}" style="width:68px;height:68px;object-fit:cover;border-radius:10px;background:#f5f5f5;flex-shrink:0;" />
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:600;line-height:1.3;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.title}</div>
+              <div style="font-size:15px;font-weight:700;color:#111;">${ksh(item.price)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <button onclick="changeQty(${globalIdx},-1)" style="width:30px;height:30px;border-radius:50%;border:1.5px solid #ddd;background:#f5f5f5;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+              <span style="font-weight:700;min-width:22px;text-align:center;">${item.quantity}</span>
+              <button onclick="changeQty(${globalIdx},1)" style="width:30px;height:30px;border-radius:50%;border:1.5px solid #ddd;background:#f5f5f5;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+              <button onclick="removeItem(${globalIdx})" style="margin-left:4px;color:#e53e3e;font-size:18px;background:none;border:none;cursor:pointer;">🗑</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:16px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <span style="font-weight:800;font-size:15px;">🏪 ${group.name}</span>
+              <span style="font-size:12px;color:#888;margin-left:8px;">${group.items.length} item${group.items.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div style="font-weight:700;color:#e8450a;">${ksh(sellerTotal)}</div>
+          </div>
+          ${itemsHtml}
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+            ${group.wa ? `<a href="${waMsg}" target="_blank"
+              style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#25D366;color:#fff;padding:12px;border-radius:50px;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;">
+              💬 Message ${group.name}
+            </a>` : `<a href="/checkout"
+              style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#25D366;color:#fff;padding:12px;border-radius:50px;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;">
+              💬 Message Seller
+            </a>`}
+          </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('itemCount')!.textContent = String(totalItems);
+    document.getElementById('grandTotal')!.textContent = ksh(grandTotal);
+
+    // Collect all WhatsApp links with sellers that have a number
+    const waLinks = Object.values(sellerMap)
+      .filter((g: any) => g.wa)
+      .map((g: any) => {
+        const itemLines = g.items.map((i: any) => `• ${i.title} x${i.quantity} — ${ksh(i.price * i.quantity)}`).join('\n');
+        const sellerTotal = g.items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+        return `https://wa.me/${g.wa}?text=${encodeURIComponent(`Hi ${g.name}, I'd like to order from Kebay:\n${itemLines}\nTotal: ${ksh(sellerTotal)}\n\nPlease confirm.`)}`;
+      });
+
+    const checkoutAllBtn = document.getElementById('checkoutAllBtn')!;
+    if (waLinks.length > 1) {
+      checkoutAllBtn.style.display = 'block';
+      checkoutAllBtn.onclick = () => {
+        waLinks.forEach((url, i) => {
+          setTimeout(() => { window.open(url, '_blank'); }, i * 500);
+        });
+      };
+    } else {
+      checkoutAllBtn.style.display = 'none';
+    }
+  }
+
+  (window as any).changeQty = (idx: number, delta: number) => {
+    const cart: any[] = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
+    if (!cart[idx]) return;
+    cart[idx].quantity = Math.max(1, cart[idx].quantity + delta);
+    localStorage.setItem('kebay_cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('kebay:cart-updated'));
+    renderCart();
+  };
+
+  (window as any).removeItem = (idx: number) => {
+    const cart: any[] = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
+    cart.splice(idx, 1);
+    localStorage.setItem('kebay_cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('kebay:cart-updated'));
+    renderCart();
+  };
+
+  // Add recommended product to cart
+  document.querySelectorAll('.add-rec-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const b = e.currentTarget as HTMLElement;
+      const item = { id: b.dataset.id, title: b.dataset.title, price: parseInt(b.dataset.price || '0'), image: b.dataset.image, quantity: 1 };
+      const cart = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
+      const idx = cart.findIndex((c: any) => c.id === item.id);
+      if (idx > -1) cart[idx].quantity += 1;
+      else cart.push(item);
+      localStorage.setItem('kebay_cart', JSON.stringify(cart));
+      window.dispatchEvent(new Event('kebay:cart-updated'));
+      renderCart();
+    });
+  });
+
+  renderCart();
+
+  // ── Subscribe to products table to flag unavailable cart items ──
+  import { supabase } from '../lib/supabase';
+  import { watchTable } from '../lib/realtime';
+
+  async function checkCartAvailability() {
+    const cart: any[] = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
+    if (cart.length === 0) return;
+
+    // Get all product IDs in cart that are not demo items
+    const realIds = cart.map(i => i.id).filter(id => !id.startsWith('demo'));
+    if (realIds.length === 0) return;
+
+    try {
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, stock, is_active')
+        .in('id', realIds);
+
+      if (!products) return;
+
+      const unavailable = new Set<string>();
+      products.forEach((p: any) => {
+        if (p.stock === 0 || !p.is_active) unavailable.add(p.id);
+      });
+
+      // Add warning badges to affected cart items
+      cart.forEach((item: any) => {
+        if (unavailable.has(item.id)) {
+          // Find item in rendered cart
+          const imgs = document.querySelectorAll('#sellerGroups img[data-product-id]');
+          imgs.forEach(img => {
+            const imgEl = img as HTMLImageElement;
+            const container = imgEl.closest('div[style*="display:flex"]');
+            if (container && imgEl.dataset.productId === item.id) {
+              const existing = container.querySelector('.unavailable-badge');
+              if (!existing) {
+                const badge = document.createElement('div');
+                badge.className = 'unavailable-badge';
+                badge.textContent = '⚠️ No longer available';
+                badge.style.cssText = 'font-size:11px;font-weight:700;color:#d97706;background:#fef9c3;border:1px solid #fde68a;border-radius:6px;padding:3px 8px;margin-top:4px;';
+                container.appendChild(badge);
+              }
+            }
+          });
+        }
+      });
+    } catch (_) {
+      // Supabase not available
+    }
+  }
+
+  // Run once after render, then subscribe
+  setTimeout(checkCartAvailability, 500);
+
+  const productsChannel = watchTable(supabase, 'products', checkCartAvailability);
+  window.addEventListener('beforeunload', () => productsChannel.unsubscribe());
+</script>

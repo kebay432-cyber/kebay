@@ -1,0 +1,568 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { createClient } from '@supabase/supabase-js';
+import { getDemoProductById } from '../../lib/demoData';
+
+// No prerender — this page renders on demand for every product UUID
+const { id } = Astro.params;
+const demoProduct = getDemoProductById(id as string);
+
+let product: any = demoProduct ?? null;
+
+// Fetch from Supabase if not a demo product
+if (!product) {
+  try {
+    const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+    const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseKey && id) {
+      const supa = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+      const { data } = await supa
+        .from('products')
+        .select('*, profiles!seller_id(full_name, whatsapp_number)')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (data) {
+        product = {
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          price: data.price,
+          original_price: null,
+          original: null,
+          images: data.images?.length ? data.images : ['https://picsum.photos/seed/product/600/600'],
+          category: data.category,
+          stock: data.stock,
+          seller: {
+            id: data.seller_id,
+            name: data.profiles?.full_name || 'Seller',
+            whatsapp: data.profiles?.whatsapp_number || '',
+            rating: 4.5,
+            sales: 0,
+          },
+        };
+      }
+    }
+  } catch (_) {}
+}
+
+// Redirect to search if product not found
+if (!product) {
+  return Astro.redirect('/search');
+}
+
+const demoReviews = [
+  { name:'Jane W.', stars:5, text:'Absolutely love this! Arrived quickly and exactly as described.', date:'Nov 20, 2026' },
+  { name:'Peter M.', stars:4, text:'Great quality. The seller was very responsive on WhatsApp.', date:'Nov 15, 2026' },
+  { name:'Aisha K.', stars:5, text:'Best purchase I\'ve made this month. Highly recommend this seller.', date:'Nov 10, 2026' },
+];
+
+function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+
+const imgSrc = product.images?.[0] || product.image || 'https://picsum.photos/seed/product/600/600';
+const price: number = product.price ?? 0;
+const originalPrice: number = product.original_price ?? product.original ?? 0;
+const discount = originalPrice > price ? Math.round((1 - price / originalPrice) * 100) : 0;
+const sellerWa = product.seller?.whatsapp ?? '';
+const waText = encodeURIComponent(`Hi ${product.seller?.name ?? ''}, I'd like to buy: ${product.title} — Kebay`);
+const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
+---
+
+<Layout title={`${product.title} — Kebay`}>
+  <Header />
+
+  <style>
+    @media (max-width: 768px) {
+      #layout { flex-direction: column !important; }
+      .related-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+    #waBtnSticky { display:none; }
+    @media (max-width: 768px) {
+      #waBtn { display:none !important; }
+      #waBtnSticky { display:block !important; }
+    }
+    @keyframes wa-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,.5); }
+      50%       { box-shadow: 0 0 0 12px rgba(37,211,102,0); }
+    }
+    .wa-btn-animated { animation: wa-pulse 2s ease-in-out infinite; }
+    .star-filled { color: #f59e0b; }
+    .star-empty  { color: #d1d5db; }
+    @media (prefers-reduced-motion: reduce) { .wa-btn-animated { animation: none; } }
+  </style>
+
+  <main>
+    <div class="container" style="padding-top:14px;padding-bottom:100px;">
+
+      <!-- Breadcrumb -->
+      <div style="font-size:12px;color:#888;margin-bottom:14px;" id="breadcrumb">
+        <a href="/" style="color:#e8450a;">Home</a> /
+        <a href={`/search?cat=${product.category}`} style="color:#e8450a;" id="breadCat">{product.category}</a> /
+        <span id="breadTitle">{product.title}</span>
+      </div>
+
+      <!-- Main layout -->
+      <div id="layout" style="display:flex;gap:32px;align-items:flex-start;"
+        data-product-id={product.id}
+        data-category={product.category}>
+
+        <!-- Images column -->
+        <div style="flex:1;min-width:0;">
+          <div style="border-radius:16px;overflow:hidden;background:#f5f5f5;aspect-ratio:1;position:relative;">
+            <img id="mainImg" src={imgSrc} alt={product.title} style="width:100%;height:100%;object-fit:cover;" />
+            {discount > 0 && <div style="position:absolute;top:12px;left:12px;background:#e8450a;color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:50px;">{discount}% OFF</div>}
+          </div>
+          <div id="thumbsRow" style="display:flex;gap:8px;margin-top:10px;">
+            {(product as any).images && (product as any).images.length > 1 && (product as any).images.map((img: string, i: number) => (
+              <button class="thumb-btn" data-src={img} style={`border-radius:8px;overflow:hidden;width:60px;height:60px;border:${i===0?'2px solid #e8450a':'2px solid #e5e5e5'};padding:0;cursor:pointer;`}>
+                <img src={img} alt="" style="width:100%;height:100%;object-fit:cover;" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <!-- Details column -->
+        <div style="flex:1;min-width:0;" id="detailsCol">
+          <h1 style="font-size:22px;font-weight:800;line-height:1.3;margin-bottom:14px;" id="productTitle">{product.title}</h1>
+
+          <div style="margin-bottom:16px;" id="priceBlock">
+            <span style="font-size:30px;font-weight:900;" id="productPrice">{price > 0 ? ksh(price) : ''}</span>
+            {originalPrice > price && <span style="font-size:16px;color:#999;text-decoration:line-through;margin-left:10px;" id="productOriginal">{ksh(originalPrice)}</span>}
+            {discount > 0 && <span style="margin-left:10px;background:#fff0eb;color:#e8450a;font-size:13px;font-weight:700;padding:2px 10px;border-radius:50px;" id="productDiscount">Save {ksh(originalPrice - price)}</span>}
+          </div>
+
+          <div style="margin-bottom:16px;font-size:14px;" id="stockStatus">
+            {(product as any).stock > 0
+              ? <span style="color:#1a7a4a;font-weight:600;">✅ In Stock ({(product as any).stock} available)</span>
+              : <span style="color:#e53e3e;font-weight:600;">❌ Out of Stock</span>}
+          </div>
+
+          <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+            <button id="addToCart"
+              data-id={String(id)}
+              data-title={product.title}
+              data-price={String(price)}
+              data-image={imgSrc}
+              data-seller-id={(product as any).seller?.id ?? ''}
+              data-seller-name={(product as any).seller?.name ?? ''}
+              data-seller-wa={sellerWa}
+              style="flex:1;min-width:140px;background:#111;color:#fff;padding:14px 24px;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;border:none;">
+              🛒 Add to Cart
+            </button>
+            <button id="wishBtn" style="background:#f5f5f5;border:none;border-radius:50px;padding:14px 18px;font-size:20px;cursor:pointer;">🤍</button>
+          </div>
+
+          <!-- Desktop WhatsApp button -->
+          <a id="waBtn" href={waLink} target="_blank" rel="noopener"
+            class="wa-btn-animated"
+            style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#fff;padding:16px;border-radius:50px;font-size:17px;font-weight:700;text-decoration:none;margin-bottom:20px;width:100%;box-sizing:border-box;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a9.1 9.1 0 00-.57-.01c-.198 0-.52.074-.792.372-.273.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Buy on WhatsApp
+          </a>
+
+          <!-- Seller info -->
+          <div style="border:1px solid #e5e5e5;border-radius:12px;padding:14px;margin-bottom:20px;" id="sellerBlock">
+            <div style="font-size:13px;color:#888;margin-bottom:4px;">Sold by</div>
+            <div style="font-weight:700;font-size:15px;" id="sellerName">{(product as any).seller?.name ?? ''}</div>
+            <div style="font-size:13px;color:#666;margin-top:4px;" id="sellerMeta">
+              ⭐ {(product as any).seller?.rating ?? 4.5} · {(product as any).seller?.sales ?? 0} sales
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">About this item</h3>
+            <p style="font-size:14px;color:#444;line-height:1.6;" id="productDesc">{(product as any).description ?? ''}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- You may also like -->
+      <section id="youMayLikeSection" style="margin-top:48px;display:none;">
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:16px;">✨ You may also like</h2>
+        <div id="youMayLikeGrid" class="related-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;"></div>
+      </section>
+
+      <!-- Recently Viewed -->
+      <section id="recentlyViewedSection" style="margin-top:48px;display:none;">
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:16px;">🕐 Recently viewed</h2>
+        <div id="recentlyViewedGrid" class="related-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;"></div>
+      </section>
+
+      <!-- Reviews -->
+      <section style="margin-top:48px;">
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:16px;">⭐ Reviews</h2>
+        <div style="display:grid;gap:14px;margin-bottom:24px;">
+          {demoReviews.map(r => (
+            <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:18px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-weight:700;font-size:14px;">{r.name}</div>
+                <div style="font-size:12px;color:#888;">{r.date}</div>
+              </div>
+              <div style="margin-bottom:8px;">
+                {[1,2,3,4,5].map(s => (
+                  <span class={s <= r.stars ? 'star-filled' : 'star-empty'}>★</span>
+                ))}
+              </div>
+              <p style="font-size:14px;color:#444;line-height:1.5;">{r.text}</p>
+            </div>
+          ))}
+        </div>
+
+        <div id="writeReviewSection" style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="document.getElementById('reviewForm').style.display = document.getElementById('reviewForm').style.display === 'none' ? 'block' : 'none'">
+            <span style="font-weight:700;font-size:15px;">✍️ Write a Review</span>
+            <span style="color:#888;">▼</span>
+          </div>
+          <div id="reviewForm" style="display:none;margin-top:16px;">
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">YOUR NAME</label>
+              <input type="text" placeholder="e.g. Jane W." style="width:100%;padding:9px 13px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;" />
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">RATING</label>
+              <div id="starSelector" style="font-size:28px;cursor:pointer;letter-spacing:4px;">
+                <span class="star-sel" data-v="1">☆</span>
+                <span class="star-sel" data-v="2">☆</span>
+                <span class="star-sel" data-v="3">☆</span>
+                <span class="star-sel" data-v="4">☆</span>
+                <span class="star-sel" data-v="5">☆</span>
+              </div>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">REVIEW</label>
+              <textarea rows="3" placeholder="Share your experience with this product…" style="width:100%;padding:9px 13px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;resize:vertical;"></textarea>
+            </div>
+            <button style="padding:12px 28px;background:#e8450a;color:#fff;border:none;border-radius:50px;font-weight:700;font-size:14px;cursor:pointer;">Submit Review</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Sticky CTA bar (mobile only) -->
+  <div id="waBtnSticky" style="position:fixed;bottom:68px;left:0;right:0;z-index:150;background:#fff;padding:10px 16px;border-top:1px solid #e5e5e5;">
+    <div style="display:flex;gap:10px;">
+      <button id="addToCartMobile"
+        data-id={String(id)}
+        data-title={product.title}
+        data-price={String(price)}
+        data-image={imgSrc}
+        data-seller-id={(product as any).seller?.id ?? ''}
+        data-seller-name={(product as any).seller?.name ?? ''}
+        data-seller-wa={sellerWa}
+        style="flex:1;background:#111;color:#fff;padding:13px 10px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;border:none;">
+        🛒 Add to Cart
+      </button>
+      <a id="waBtnMobile" href={waLink} target="_blank" rel="noopener"
+        style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:#25D366;color:#fff;padding:13px 10px;border-radius:50px;font-size:14px;font-weight:700;text-decoration:none;">
+        💬 Buy on WhatsApp
+      </a>
+    </div>
+  </div>
+
+  <Footer />
+</Layout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  // ── Helpers ──
+  function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+
+  const layoutEl = document.getElementById('layout') as HTMLElement;
+  const addToCartBtn = document.getElementById('addToCart') as HTMLElement;
+  const addToCartMobileBtn = document.getElementById('addToCartMobile') as HTMLElement;
+  const productId = layoutEl?.dataset.productId ?? '';
+  const isDemo = layoutEl?.dataset.isDemo === 'true';
+
+  // ── For non-demo products: fetch real data from Supabase ──
+  if (!isDemo && productId && productId !== '__product__') {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*, profiles!seller_id(full_name, whatsapp_number)')
+          .eq('id', productId)
+          .maybeSingle();
+
+        if (!data || error) {
+          // Product not found — go to search
+          window.location.href = '/search';
+          return;
+        }
+
+        const img = data.images?.[0] ?? 'https://picsum.photos/seed/product/600/600';
+        const sellerName = data.profiles?.full_name ?? 'Seller';
+        const sellerWa = data.profiles?.whatsapp_number ?? '';
+        const waMsg = encodeURIComponent(`Hi ${sellerName}, I'd like to buy: ${data.title} — Kebay`);
+        const waHref = sellerWa ? `https://wa.me/${sellerWa}?text=${waMsg}` : '#';
+
+        // Update title + meta
+        document.title = `${data.title} — Kebay`;
+        const breadTitle = document.getElementById('breadTitle');
+        if (breadTitle) breadTitle.textContent = data.title;
+        const breadCat = document.getElementById('breadCat') as HTMLAnchorElement;
+        if (breadCat) { breadCat.textContent = data.category; breadCat.href = `/search?cat=${data.category}`; }
+
+        // Update product details
+        const titleEl = document.getElementById('productTitle');
+        if (titleEl) titleEl.textContent = data.title;
+        const priceEl = document.getElementById('productPrice');
+        if (priceEl) priceEl.textContent = ksh(data.price);
+        const origEl = document.getElementById('productOriginal');
+        if (origEl) origEl.style.display = 'none'; // no original price from DB
+        const discEl = document.getElementById('productDiscount');
+        if (discEl) discEl.style.display = 'none';
+        const stockEl = document.getElementById('stockStatus');
+        if (stockEl) stockEl.innerHTML = data.stock > 0
+          ? `<span style="color:#1a7a4a;font-weight:600;">✅ In Stock (${data.stock} available)</span>`
+          : `<span style="color:#e53e3e;font-weight:600;">❌ Out of Stock</span>`;
+        const descEl = document.getElementById('productDesc');
+        if (descEl) descEl.textContent = data.description ?? '';
+
+        // Update seller block
+        const sellerNameEl = document.getElementById('sellerName');
+        if (sellerNameEl) sellerNameEl.textContent = sellerName;
+        const sellerMetaEl = document.getElementById('sellerMeta');
+        if (sellerMetaEl) sellerMetaEl.textContent = '⭐ 4.5 · Seller';
+
+        // Update image
+        const mainImg = document.getElementById('mainImg') as HTMLImageElement;
+        if (mainImg) mainImg.src = img;
+        const thumbsRow = document.getElementById('thumbsRow');
+        if (thumbsRow && data.images?.length > 1) {
+          thumbsRow.innerHTML = data.images.map((src: string, i: number) => `
+            <button class="thumb-btn" data-src="${src}" style="border-radius:8px;overflow:hidden;width:60px;height:60px;border:${i===0?'2px solid #e8450a':'2px solid #e5e5e5'};padding:0;cursor:pointer;">
+              <img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover;" />
+            </button>`).join('');
+          // Re-attach thumb listeners
+          thumbsRow.querySelectorAll('.thumb-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const src = (btn as HTMLElement).dataset.src;
+              if (mainImg && src) mainImg.src = src;
+              thumbsRow.querySelectorAll('.thumb-btn').forEach(b => (b as HTMLElement).style.border = '2px solid #e5e5e5');
+              (btn as HTMLElement).style.border = '2px solid #e8450a';
+            });
+          });
+        }
+
+        // Update WhatsApp buttons
+        const waBtn = document.getElementById('waBtn') as HTMLAnchorElement;
+        if (waBtn) waBtn.href = waHref;
+        const waBtnMobile = document.getElementById('waBtnMobile') as HTMLAnchorElement;
+        if (waBtnMobile) waBtnMobile.href = waHref;
+
+        // Update add-to-cart data attributes
+        [addToCartBtn, addToCartMobileBtn].forEach(btn => {
+          if (!btn) return;
+          btn.dataset.id = data.id;
+          btn.dataset.title = data.title;
+          btn.dataset.price = String(data.price);
+          btn.dataset.image = img;
+          btn.dataset.sellerName = sellerName;
+          btn.dataset.sellerWa = sellerWa;
+        });
+
+      } catch (_) {
+        window.location.href = '/search';
+      }
+    })();
+  }
+
+  // ── Thumbnail swap (for demo products with server-rendered thumbs) ──
+  document.querySelectorAll('.thumb-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const src = (btn as HTMLElement).dataset.src;
+      const main = document.getElementById('mainImg') as HTMLImageElement;
+      if (main && src) main.src = src;
+      document.querySelectorAll('.thumb-btn').forEach(b => (b as HTMLElement).style.border = '2px solid #e5e5e5');
+      (btn as HTMLElement).style.border = '2px solid #e8450a';
+    });
+  });
+
+  // ── Add to Cart ──
+  function addItemToCart(btn: HTMLElement) {
+    const item = {
+      id: btn.dataset.id,
+      title: btn.dataset.title,
+      price: parseInt(btn.dataset.price || '0'),
+      image: btn.dataset.image,
+      quantity: 1,
+      sellerId: btn.dataset.sellerId,
+      sellerName: btn.dataset.sellerName,
+      sellerWa: btn.dataset.sellerWa,
+    };
+    const cart = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
+    const idx = cart.findIndex((c: any) => c.id === item.id);
+    if (idx > -1) cart[idx].quantity += 1;
+    else cart.push(item);
+    localStorage.setItem('kebay_cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('kebay:cart-updated'));
+  }
+
+  addToCartBtn?.addEventListener('click', (e) => {
+    const btn = e.currentTarget as HTMLElement;
+    addItemToCart(btn);
+    btn.textContent = '✅ Added to Cart';
+    setTimeout(() => { btn.innerHTML = '🛒 Add to Cart'; }, 1500);
+  });
+
+  addToCartMobileBtn?.addEventListener('click', (e) => {
+    const btn = e.currentTarget as HTMLElement;
+    addItemToCart(btn);
+    btn.textContent = '✅ Added';
+    setTimeout(() => { btn.innerHTML = '🛒 Add to Cart'; }, 1500);
+  });
+
+  // ── Wishlist ──
+  document.getElementById('wishBtn')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget as HTMLElement;
+    const isWished = btn.textContent === '❤️';
+    btn.textContent = isWished ? '🤍' : '❤️';
+    const item = {
+      id: addToCartBtn?.dataset.id,
+      title: addToCartBtn?.dataset.title,
+      price: parseInt(addToCartBtn?.dataset.price || '0'),
+      image: addToCartBtn?.dataset.image,
+    };
+    const wishlist: any[] = JSON.parse(localStorage.getItem('kebay_wishlist') || '[]');
+    if (isWished) {
+      const idx = wishlist.findIndex((w: any) => w.id === item.id);
+      if (idx > -1) wishlist.splice(idx, 1);
+    } else {
+      if (!wishlist.find((w: any) => w.id === item.id)) wishlist.push(item);
+    }
+    localStorage.setItem('kebay_wishlist', JSON.stringify(wishlist));
+  });
+
+  // Check if already wishlisted
+  const wishlist: any[] = JSON.parse(localStorage.getItem('kebay_wishlist') || '[]');
+  if (wishlist.find((w: any) => w.id === productId)) {
+    const wb = document.getElementById('wishBtn');
+    if (wb) wb.textContent = '❤️';
+  }
+
+  // ── Star selector ──
+  let selectedStars = 0;
+  document.querySelectorAll('.star-sel').forEach(star => {
+    star.addEventListener('click', () => {
+      selectedStars = parseInt((star as HTMLElement).dataset.v || '0');
+      document.querySelectorAll('.star-sel').forEach((s, i) => {
+        (s as HTMLElement).textContent = i < selectedStars ? '★' : '☆';
+        (s as HTMLElement).style.color = i < selectedStars ? '#f59e0b' : '#d1d5db';
+      });
+    });
+    star.addEventListener('mouseover', () => {
+      const v = parseInt((star as HTMLElement).dataset.v || '0');
+      document.querySelectorAll('.star-sel').forEach((s, i) => {
+        (s as HTMLElement).textContent = i < v ? '★' : '☆';
+        (s as HTMLElement).style.color = i < v ? '#f59e0b' : '#d1d5db';
+      });
+    });
+    star.addEventListener('mouseout', () => {
+      document.querySelectorAll('.star-sel').forEach((s, i) => {
+        (s as HTMLElement).textContent = i < selectedStars ? '★' : '☆';
+        (s as HTMLElement).style.color = i < selectedStars ? '#f59e0b' : '#d1d5db';
+      });
+    });
+  });
+
+  // ── Recently viewed: store current product ──
+  if (productId && productId !== '__product__') {
+    let recentViewed: string[] = JSON.parse(localStorage.getItem('kebay_recently_viewed') || '[]');
+    recentViewed = recentViewed.filter(id => id !== productId);
+    recentViewed.unshift(productId);
+    if (recentViewed.length > 10) recentViewed = recentViewed.slice(0, 10);
+    localStorage.setItem('kebay_recently_viewed', JSON.stringify(recentViewed));
+  }
+
+  // ── Demo fallback data ──
+  const allProductsDemo: Record<string, any> = {
+    'demo-1': { id:'demo-1', title:'Samsung Galaxy A55 5G 128GB', price:45000, images:['https://picsum.photos/seed/phone1a/600/600'], category:'phones' },
+    'demo-2': { id:'demo-2', title:'HP Laptop 15s Intel Core i5', price:68000, images:['https://picsum.photos/seed/laptop1a/600/600'], category:'computers' },
+    'demo-3': { id:'demo-3', title:'Nike Air Max 270', price:12000, images:['https://picsum.photos/seed/shoes1a/600/600'], category:'fashion' },
+    'demo-4': { id:'demo-4', title:'Sony WH-1000XM5 Headphones', price:35000, images:['https://picsum.photos/seed/audio1a/600/600'], category:'electronics' },
+    'demo-5': { id:'demo-5', title:'LG Smart TV 43" Full HD', price:55000, images:['https://picsum.photos/seed/tv1a/600/600'], category:'electronics' },
+    'demo-6': { id:'demo-6', title:'Toyota Alloy Rims 15"', price:28000, images:['https://picsum.photos/seed/rims1a/600/600'], category:'motors' },
+  };
+
+  const currentCategory = layoutEl?.dataset.category || addToCartBtn?.dataset.category || '';
+  const currentPrice = parseInt(addToCartBtn?.dataset.price || '0');
+
+  // ── "You may also like" — Supabase first, demo fallback ──
+  async function loadRelated() {
+    let candidates: any[] = [];
+    const cat = document.getElementById('breadCat')?.textContent || '';
+
+    try {
+      const { data } = await supabase
+        .from('products')
+        .select('id, title, price, images, category')
+        .eq('is_active', true)
+        .eq('category', cat)
+        .neq('id', productId)
+        .limit(8);
+
+      if (data && data.length > 0) {
+        candidates = data.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          images: p.images?.length ? p.images : ['https://picsum.photos/seed/product/600/600'],
+        }));
+      }
+    } catch (_) {}
+
+    if (candidates.length === 0) {
+      const demoCandidates = Object.values(allProductsDemo).filter((p: any) =>
+        p.id !== productId && (p.category === cat || Math.abs(p.price - currentPrice) / Math.max(currentPrice, 1) < 0.3)
+      );
+      demoCandidates.sort((a: any, b: any) => {
+        const aCat = a.category === cat ? 0 : 1;
+        const bCat = b.category === cat ? 0 : 1;
+        if (aCat !== bCat) return aCat - bCat;
+        return Math.abs(a.price - currentPrice) - Math.abs(b.price - currentPrice);
+      });
+      candidates = demoCandidates;
+    }
+
+    const youMayLike = candidates.slice(0, 4);
+    if (youMayLike.length > 0) {
+      document.getElementById('youMayLikeSection')!.style.display = 'block';
+      document.getElementById('youMayLikeGrid')!.innerHTML = youMayLike.map((p: any) => `
+        <a href="/product/${p.id}" style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;">
+          <img src="${p.images[0]}" alt="${p.title}" style="width:100%;height:150px;object-fit:cover;background:#f5f5f5;" loading="lazy" />
+          <div style="padding:12px;">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title}</div>
+            <div style="font-size:14px;font-weight:900;color:#e8450a;margin-top:4px;">${ksh(p.price)}</div>
+          </div>
+        </a>`).join('');
+    }
+  }
+
+  loadRelated();
+
+  // ── Recently viewed: render ──
+  const recentIds: string[] = JSON.parse(localStorage.getItem('kebay_recently_viewed') || '[]');
+  const recentProducts = recentIds
+    .filter(rid => rid !== productId)
+    .slice(0, 4)
+    .map(rid => allProductsDemo[rid])
+    .filter(Boolean);
+
+  if (recentProducts.length > 0) {
+    document.getElementById('recentlyViewedSection')!.style.display = 'block';
+    document.getElementById('recentlyViewedGrid')!.innerHTML = recentProducts.map((p: any) => `
+      <a href="/product/${p.id}" style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;">
+        <img src="${p.images[0]}" alt="${p.title}" style="width:100%;height:150px;object-fit:cover;background:#f5f5f5;" loading="lazy" />
+        <div style="padding:12px;">
+          <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title}</div>
+          <div style="font-size:14px;font-weight:900;color:#e8450a;margin-top:4px;">${ksh(p.price)}</div>
+        </div>
+      </a>`).join('');
+  }
+</script>

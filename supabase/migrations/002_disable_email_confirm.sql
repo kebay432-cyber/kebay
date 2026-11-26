@@ -1,0 +1,3 @@
+-- Email confirmation must be disabled via the Supabase Dashboard.
+-- Go to: Authentication → Providers → Email → turn OFF "Confirm email" → Save.
+-- The auth.config table does not exist as a queryable relation in Supabase.
