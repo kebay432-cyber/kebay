@@ -5,7 +5,6 @@ import Footer from '../../components/Footer.astro';
 import { createClient } from '@supabase/supabase-js';
 import { getDemoProductById } from '../../lib/demoData';
 
-// No prerender — this page renders on demand for every product UUID
 const { id } = Astro.params;
 const demoProduct = getDemoProductById(id as string);
 
@@ -31,7 +30,6 @@ if (!product) {
           description: data.description,
           price: data.price,
           original_price: null,
-          original: null,
           images: data.images?.length ? data.images : ['https://picsum.photos/seed/product/600/600'],
           category: data.category,
           stock: data.stock,
@@ -53,11 +51,14 @@ if (!product) {
   return Astro.redirect('/search');
 }
 
-const demoReviews = [
-  { name:'Jane W.', stars:5, text:'Absolutely love this! Arrived quickly and exactly as described.', date:'Nov 20, 2026' },
-  { name:'Peter M.', stars:4, text:'Great quality. The seller was very responsive on WhatsApp.', date:'Nov 15, 2026' },
-  { name:'Aisha K.', stars:5, text:'Best purchase I\'ve made this month. Highly recommend this seller.', date:'Nov 10, 2026' },
-];
+function normalizeWA(phone: string) {
+  if (!phone) return '';
+  let p = phone.replace(/[\s\-\(\)]/g, '');
+  if (p.startsWith('+')) p = p.slice(1);
+  if (p.startsWith('07') || p.startsWith('01')) p = '254' + p.slice(1);
+  if (!p.startsWith('254')) p = '254' + p;
+  return p;
+}
 
 function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
 
@@ -65,8 +66,10 @@ const imgSrc = product.images?.[0] || product.image || 'https://picsum.photos/se
 const price: number = product.price ?? 0;
 const originalPrice: number = product.original_price ?? product.original ?? 0;
 const discount = originalPrice > price ? Math.round((1 - price / originalPrice) * 100) : 0;
-const sellerWa = product.seller?.whatsapp ?? '';
-const waText = encodeURIComponent(`Hi ${product.seller?.name ?? ''}, I'd like to buy: ${product.title} — Kebay`);
+const sellerWaRaw = product.seller?.whatsapp ?? '';
+const sellerWa = normalizeWA(sellerWaRaw);
+const siteUrl = Astro.url.origin || 'https://kebay.co.ke';
+const waText = encodeURIComponent(`Hi ${product.seller?.name ?? ''}, I'd like to buy: ${product.title} (${price > 0 ? ksh(price) : ''}) — Kebay: ${siteUrl}/product/${product.id}`);
 const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
 ---
 
@@ -139,6 +142,12 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
               : <span style="color:#e53e3e;font-weight:600;">❌ Out of Stock</span>}
           </div>
 
+          <!-- Average rating display -->
+          <div id="avgRatingBlock" style="margin-bottom:16px;font-size:14px;display:none;">
+            <span id="avgRatingStars"></span>
+            <span id="avgRatingText" style="margin-left:6px;color:#666;"></span>
+          </div>
+
           <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
             <button id="addToCart"
               data-id={String(id)}
@@ -193,23 +202,12 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
 
       <!-- Reviews -->
       <section style="margin-top:48px;">
-        <h2 style="font-size:18px;font-weight:800;margin-bottom:16px;">⭐ Reviews</h2>
-        <div style="display:grid;gap:14px;margin-bottom:24px;">
-          {demoReviews.map(r => (
-            <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:18px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                <div style="font-weight:700;font-size:14px;">{r.name}</div>
-                <div style="font-size:12px;color:#888;">{r.date}</div>
-              </div>
-              <div style="margin-bottom:8px;">
-                {[1,2,3,4,5].map(s => (
-                  <span class={s <= r.stars ? 'star-filled' : 'star-empty'}>★</span>
-                ))}
-              </div>
-              <p style="font-size:14px;color:#444;line-height:1.5;">{r.text}</p>
-            </div>
-          ))}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h2 style="font-size:18px;font-weight:800;">⭐ Reviews</h2>
+          <div id="reviewSummary" style="font-size:14px;color:#666;"></div>
         </div>
+
+        <div id="reviewsList" style="display:grid;gap:14px;margin-bottom:24px;"></div>
 
         <div id="writeReviewSection" style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px;">
           <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="document.getElementById('reviewForm').style.display = document.getElementById('reviewForm').style.display === 'none' ? 'block' : 'none'">
@@ -219,7 +217,7 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
           <div id="reviewForm" style="display:none;margin-top:16px;">
             <div style="margin-bottom:12px;">
               <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">YOUR NAME</label>
-              <input type="text" placeholder="e.g. Jane W." style="width:100%;padding:9px 13px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;" />
+              <input id="reviewName" type="text" placeholder="e.g. Jane W." style="width:100%;padding:9px 13px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;" />
             </div>
             <div style="margin-bottom:12px;">
               <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">RATING</label>
@@ -233,9 +231,10 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
             </div>
             <div style="margin-bottom:16px;">
               <label style="font-size:12px;font-weight:600;color:#888;display:block;margin-bottom:4px;">REVIEW</label>
-              <textarea rows="3" placeholder="Share your experience with this product…" style="width:100%;padding:9px 13px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;resize:vertical;"></textarea>
+              <textarea id="reviewText" rows="3" placeholder="Share your experience with this product…" style="width:100%;padding:9px 13px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;resize:vertical;"></textarea>
             </div>
-            <button style="padding:12px 28px;background:#e8450a;color:#fff;border:none;border-radius:50px;font-weight:700;font-size:14px;cursor:pointer;">Submit Review</button>
+            <div id="reviewError" style="display:none;color:#e53e3e;font-size:13px;margin-bottom:8px;"></div>
+            <button id="submitReviewBtn" style="padding:12px 28px;background:#e8450a;color:#fff;border:none;border-radius:50px;font-weight:700;font-size:14px;cursor:pointer;">Submit Review</button>
           </div>
         </div>
       </section>
@@ -273,11 +272,20 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
   // ── Helpers ──
   function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
 
+  function normalizeWA(phone: string) {
+    if (!phone) return '';
+    let p = phone.replace(/[\s\-\(\)]/g, '');
+    if (p.startsWith('+')) p = p.slice(1);
+    if (p.startsWith('07') || p.startsWith('01')) p = '254' + p.slice(1);
+    if (!p.startsWith('254')) p = '254' + p;
+    return p;
+  }
+
   const layoutEl = document.getElementById('layout') as HTMLElement;
   const addToCartBtn = document.getElementById('addToCart') as HTMLElement;
   const addToCartMobileBtn = document.getElementById('addToCartMobile') as HTMLElement;
   const productId = layoutEl?.dataset.productId ?? '';
-  const isDemo = layoutEl?.dataset.isDemo === 'true';
+  const isDemo = productId.startsWith('demo-');
 
   // ── For non-demo products: fetch real data from Supabase ──
   if (!isDemo && productId && productId !== '__product__') {
@@ -290,31 +298,29 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
           .maybeSingle();
 
         if (!data || error) {
-          // Product not found — go to search
           window.location.href = '/search';
           return;
         }
 
         const img = data.images?.[0] ?? 'https://picsum.photos/seed/product/600/600';
         const sellerName = data.profiles?.full_name ?? 'Seller';
-        const sellerWa = data.profiles?.whatsapp_number ?? '';
-        const waMsg = encodeURIComponent(`Hi ${sellerName}, I'd like to buy: ${data.title} — Kebay`);
+        const sellerWaRaw = data.profiles?.whatsapp_number ?? '';
+        const sellerWa = normalizeWA(sellerWaRaw);
+        const waMsg = encodeURIComponent(`Hi ${sellerName}, I'd like to buy: ${data.title} (${ksh(data.price)}) — Kebay: https://kebay.co.ke/product/${data.id}`);
         const waHref = sellerWa ? `https://wa.me/${sellerWa}?text=${waMsg}` : '#';
 
-        // Update title + meta
         document.title = `${data.title} — Kebay`;
         const breadTitle = document.getElementById('breadTitle');
         if (breadTitle) breadTitle.textContent = data.title;
         const breadCat = document.getElementById('breadCat') as HTMLAnchorElement;
         if (breadCat) { breadCat.textContent = data.category; breadCat.href = `/search?cat=${data.category}`; }
 
-        // Update product details
         const titleEl = document.getElementById('productTitle');
         if (titleEl) titleEl.textContent = data.title;
         const priceEl = document.getElementById('productPrice');
         if (priceEl) priceEl.textContent = ksh(data.price);
         const origEl = document.getElementById('productOriginal');
-        if (origEl) origEl.style.display = 'none'; // no original price from DB
+        if (origEl) origEl.style.display = 'none';
         const discEl = document.getElementById('productDiscount');
         if (discEl) discEl.style.display = 'none';
         const stockEl = document.getElementById('stockStatus');
@@ -324,13 +330,11 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
         const descEl = document.getElementById('productDesc');
         if (descEl) descEl.textContent = data.description ?? '';
 
-        // Update seller block
         const sellerNameEl = document.getElementById('sellerName');
         if (sellerNameEl) sellerNameEl.textContent = sellerName;
         const sellerMetaEl = document.getElementById('sellerMeta');
         if (sellerMetaEl) sellerMetaEl.textContent = '⭐ 4.5 · Seller';
 
-        // Update image
         const mainImg = document.getElementById('mainImg') as HTMLImageElement;
         if (mainImg) mainImg.src = img;
         const thumbsRow = document.getElementById('thumbsRow');
@@ -339,7 +343,6 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
             <button class="thumb-btn" data-src="${src}" style="border-radius:8px;overflow:hidden;width:60px;height:60px;border:${i===0?'2px solid #e8450a':'2px solid #e5e5e5'};padding:0;cursor:pointer;">
               <img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover;" />
             </button>`).join('');
-          // Re-attach thumb listeners
           thumbsRow.querySelectorAll('.thumb-btn').forEach(btn => {
             btn.addEventListener('click', () => {
               const src = (btn as HTMLElement).dataset.src;
@@ -350,13 +353,11 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
           });
         }
 
-        // Update WhatsApp buttons
         const waBtn = document.getElementById('waBtn') as HTMLAnchorElement;
         if (waBtn) waBtn.href = waHref;
         const waBtnMobile = document.getElementById('waBtnMobile') as HTMLAnchorElement;
         if (waBtnMobile) waBtnMobile.href = waHref;
 
-        // Update add-to-cart data attributes
         [addToCartBtn, addToCartMobileBtn].forEach(btn => {
           if (!btn) return;
           btn.dataset.id = data.id;
@@ -373,7 +374,7 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
     })();
   }
 
-  // ── Thumbnail swap (for demo products with server-rendered thumbs) ──
+  // ── Thumbnail swap ──
   document.querySelectorAll('.thumb-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const src = (btn as HTMLElement).dataset.src;
@@ -439,7 +440,6 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
     localStorage.setItem('kebay_wishlist', JSON.stringify(wishlist));
   });
 
-  // Check if already wishlisted
   const wishlist: any[] = JSON.parse(localStorage.getItem('kebay_wishlist') || '[]');
   if (wishlist.find((w: any) => w.id === productId)) {
     const wb = document.getElementById('wishBtn');
@@ -471,7 +471,97 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
     });
   });
 
-  // ── Recently viewed: store current product ──
+  // ── Reviews ──
+  const REVIEWS_KEY = `kebay_reviews_${productId}`;
+
+  function starsHtml(n: number) {
+    return [1,2,3,4,5].map(s => `<span style="color:${s<=n?'#f59e0b':'#d1d5db'}">★</span>`).join('');
+  }
+
+  function loadReviews(): any[] {
+    try { return JSON.parse(localStorage.getItem(REVIEWS_KEY) || '[]'); } catch { return []; }
+  }
+
+  function renderReviews() {
+    const reviews = loadReviews();
+    const list = document.getElementById('reviewsList')!;
+    const summary = document.getElementById('reviewSummary')!;
+    const avgBlock = document.getElementById('avgRatingBlock')!;
+
+    if (reviews.length === 0) {
+      list.innerHTML = `<div style="color:#888;font-size:14px;">No reviews yet. Be the first to review!</div>`;
+      summary.textContent = '';
+      avgBlock.style.display = 'none';
+      return;
+    }
+
+    const avg = reviews.reduce((s: number, r: any) => s + r.stars, 0) / reviews.length;
+    summary.textContent = `${avg.toFixed(1)} ★ · ${reviews.length} review${reviews.length !== 1 ? 's' : ''}`;
+    avgBlock.style.display = 'block';
+    document.getElementById('avgRatingStars')!.innerHTML = starsHtml(Math.round(avg));
+    document.getElementById('avgRatingText')!.textContent = `${avg.toFixed(1)} out of 5 (${reviews.length} reviews)`;
+
+    list.innerHTML = reviews.map((r: any) => `
+      <div style="background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-weight:700;font-size:14px;">${r.name}</div>
+          <div style="font-size:12px;color:#888;">${r.date}</div>
+        </div>
+        <div style="margin-bottom:8px;">${starsHtml(r.stars)}</div>
+        <p style="font-size:14px;color:#444;line-height:1.5;">${r.text}</p>
+      </div>`).join('');
+  }
+
+  renderReviews();
+
+  document.getElementById('submitReviewBtn')?.addEventListener('click', async () => {
+    const name = (document.getElementById('reviewName') as HTMLInputElement).value.trim();
+    const text = (document.getElementById('reviewText') as HTMLTextAreaElement).value.trim();
+    const errEl = document.getElementById('reviewError')!;
+    errEl.style.display = 'none';
+
+    if (!name) { errEl.textContent = 'Please enter your name.'; errEl.style.display = 'block'; return; }
+    if (!selectedStars) { errEl.textContent = 'Please select a star rating.'; errEl.style.display = 'block'; return; }
+    if (!text) { errEl.textContent = 'Please write your review.'; errEl.style.display = 'block'; return; }
+
+    const review = {
+      name,
+      stars: selectedStars,
+      text,
+      date: new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }),
+    };
+
+    // Save to localStorage
+    const reviews = loadReviews();
+    reviews.unshift(review);
+    localStorage.setItem(REVIEWS_KEY, JSON.stringify(reviews));
+
+    // Try to save to Supabase reviews table (graceful fallback)
+    try {
+      await supabase.from('reviews').insert({
+        product_id: productId,
+        buyer_name: name,
+        stars: selectedStars,
+        text,
+      });
+    } catch (_) {
+      // Table may not exist yet — local storage already saved
+    }
+
+    renderReviews();
+
+    // Reset form
+    (document.getElementById('reviewName') as HTMLInputElement).value = '';
+    (document.getElementById('reviewText') as HTMLTextAreaElement).value = '';
+    selectedStars = 0;
+    document.querySelectorAll('.star-sel').forEach(s => {
+      (s as HTMLElement).textContent = '☆';
+      (s as HTMLElement).style.color = '#d1d5db';
+    });
+    document.getElementById('reviewForm')!.style.display = 'none';
+  });
+
+  // ── Recently viewed ──
   if (productId && productId !== '__product__') {
     let recentViewed: string[] = JSON.parse(localStorage.getItem('kebay_recently_viewed') || '[]');
     recentViewed = recentViewed.filter(id => id !== productId);
@@ -480,23 +570,37 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
     localStorage.setItem('kebay_recently_viewed', JSON.stringify(recentViewed));
   }
 
-  // ── Demo fallback data ──
+  // ── Demo product lookup (all 20) ──
   const allProductsDemo: Record<string, any> = {
-    'demo-1': { id:'demo-1', title:'Samsung Galaxy A55 5G 128GB', price:45000, images:['https://picsum.photos/seed/phone1a/600/600'], category:'phones' },
-    'demo-2': { id:'demo-2', title:'HP Laptop 15s Intel Core i5', price:68000, images:['https://picsum.photos/seed/laptop1a/600/600'], category:'computers' },
-    'demo-3': { id:'demo-3', title:'Nike Air Max 270', price:12000, images:['https://picsum.photos/seed/shoes1a/600/600'], category:'fashion' },
-    'demo-4': { id:'demo-4', title:'Sony WH-1000XM5 Headphones', price:35000, images:['https://picsum.photos/seed/audio1a/600/600'], category:'electronics' },
-    'demo-5': { id:'demo-5', title:'LG Smart TV 43" Full HD', price:55000, images:['https://picsum.photos/seed/tv1a/600/600'], category:'electronics' },
-    'demo-6': { id:'demo-6', title:'Toyota Alloy Rims 15"', price:28000, images:['https://picsum.photos/seed/rims1a/600/600'], category:'motors' },
+    'demo-1':  { id:'demo-1',  title:'Samsung Galaxy A55 5G 128GB',          price:45000,  images:['https://picsum.photos/seed/samsung-a55-1/600/600'],   category:'phones' },
+    'demo-2':  { id:'demo-2',  title:'iPhone 14 Pro Max 256GB',               price:145000, images:['https://picsum.photos/seed/iphone14-pro-1/600/600'],  category:'phones' },
+    'demo-3':  { id:'demo-3',  title:'HP Laptop 15s Intel Core i5 11th Gen',  price:68000,  images:['https://picsum.photos/seed/hp-laptop-15s-1/600/600'], category:'computers' },
+    'demo-4':  { id:'demo-4',  title:'MacBook Air M2 8GB 256GB',              price:128000, images:['https://picsum.photos/seed/macbook-air-m2-1/600/600'],category:'computers' },
+    'demo-5':  { id:'demo-5',  title:'Sony WH-1000XM5 Wireless Headphones',  price:35000,  images:['https://picsum.photos/seed/sony-xm5-1/600/600'],      category:'electronics' },
+    'demo-6':  { id:'demo-6',  title:'LG Smart TV 43" Full HD WebOS',         price:55000,  images:['https://picsum.photos/seed/lg-tv-43-1/600/600'],      category:'electronics' },
+    'demo-7':  { id:'demo-7',  title:'Nike Air Max 270 — Size 42',            price:12000,  images:['https://picsum.photos/seed/nike-airmax-270-1/600/600'],category:'fashion' },
+    'demo-8':  { id:'demo-8',  title:'Kitenge Dress — Ankara Print Medium',  price:2500,   images:['https://picsum.photos/seed/kitenge-dress-1/600/600'],  category:'fashion' },
+    'demo-9':  { id:'demo-9',  title:'Toyota Alloy Rims 15" Set of 4',       price:28000,  images:['https://picsum.photos/seed/toyota-rims-1/600/600'],    category:'motors' },
+    'demo-10': { id:'demo-10', title:'Vitron 2-Door Fridge 120L',             price:22000,  images:['https://picsum.photos/seed/vitron-fridge-1/600/600'],  category:'home' },
+    'demo-11': { id:'demo-11', title:'L-Shaped Sofa Set 5-Seater',            price:65000,  images:['https://picsum.photos/seed/sofa-lshape-1/600/600'],   category:'home' },
+    'demo-12': { id:'demo-12', title:'Nunix 2-Plate Electric Cooker',         price:2800,   images:['https://picsum.photos/seed/nunix-cooker-1/600/600'],   category:'home' },
+    'demo-13': { id:'demo-13', title:'Kipchoge Running Shoes — Size 43',      price:4500,   images:['https://picsum.photos/seed/running-shoes-1/600/600'],  category:'sporting' },
+    'demo-14': { id:'demo-14', title:'Football — FIFA Quality Pro',           price:3200,   images:['https://picsum.photos/seed/football-pro-1/600/600'],   category:'sporting' },
+    'demo-15': { id:'demo-15', title:'Tecno Spark 20 Pro 128GB',              price:18500,  images:['https://picsum.photos/seed/tecno-spark20-1/600/600'],  category:'phones' },
+    'demo-16': { id:'demo-16', title:"Citizen Solar Watch — Men's",           price:25000,  images:['https://picsum.photos/seed/citizen-watch-1/600/600'],  category:'fashion' },
+    'demo-17': { id:'demo-17', title:'Ramtons Blender 1.5L 600W',             price:3500,   images:['https://picsum.photos/seed/ramtons-blender-1/600/600'],category:'home' },
+    'demo-18': { id:'demo-18', title:'DJI Mini 3 Drone with RC-N1',           price:95000,  images:['https://picsum.photos/seed/dji-mini3-1/600/600'],      category:'electronics' },
+    'demo-19': { id:'demo-19', title:'Mahindra Tractor Spare Parts Kit',      price:8500,   images:['https://picsum.photos/seed/tractor-parts-1/600/600'],  category:'motors' },
+    'demo-20': { id:'demo-20', title:'Chess Set — Handcarved Kisii Stone',    price:4800,   images:['https://picsum.photos/seed/kisii-chess-1/600/600'],    category:'collectibles' },
   };
 
-  const currentCategory = layoutEl?.dataset.category || addToCartBtn?.dataset.category || '';
+  const currentCategory = layoutEl?.dataset.category || '';
   const currentPrice = parseInt(addToCartBtn?.dataset.price || '0');
 
-  // ── "You may also like" — Supabase first, demo fallback ──
+  // ── "You may also like" ──
   async function loadRelated() {
     let candidates: any[] = [];
-    const cat = document.getElementById('breadCat')?.textContent || '';
+    const cat = currentCategory;
 
     try {
       const { data } = await supabase

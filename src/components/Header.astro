@@ -183,16 +183,16 @@
   <!-- Secondary nav -->
   <nav class="header-nav">
     <div class="header-nav-inner">
-      <a href="/search">All</a>
-      <a href="/search?cat=phones">Phones</a>
-      <a href="/search?cat=computers">Computers</a>
-      <a href="/search?cat=electronics">Electronics</a>
-      <a href="/search?cat=fashion">Fashion</a>
-      <a href="/search?cat=home">Home & Garden</a>
-      <a href="/search?cat=motors">Motors</a>
-      <a href="/search?cat=sporting">Sports</a>
-      <a href="/search?cat=gaming">Gaming</a>
-      <a href="/search?deals=true" style="color:#e8450a;font-weight:700;">Deals</a>
+      <a href="/search" data-cat="">All</a>
+      <a href="/search?cat=phones" data-cat="phones">Phones</a>
+      <a href="/search?cat=computers" data-cat="computers">Computers</a>
+      <a href="/search?cat=electronics" data-cat="electronics">Electronics</a>
+      <a href="/search?cat=fashion" data-cat="fashion">Fashion</a>
+      <a href="/search?cat=home" data-cat="home">Home & Garden</a>
+      <a href="/search?cat=motors" data-cat="motors">Motors</a>
+      <a href="/search?cat=sporting" data-cat="sporting">Sports</a>
+      <a href="/search?cat=gaming" data-cat="gaming">Gaming</a>
+      <a href="/search?deals=true" data-cat="" style="color:#e8450a;font-weight:700;">Deals</a>
     </div>
   </nav>
 </header>
@@ -340,6 +340,40 @@
     }
   }
   updateAuthState();
+
+  // ── Smooth category nav — intercept header nav links ──
+  document.querySelectorAll('.header-nav-inner a[data-cat]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const cat = (link as HTMLElement).dataset.cat || '';
+      const href = (link as HTMLAnchorElement).href;
+
+      // If already on search page, filter in-place without reload
+      if (window.location.pathname === '/search') {
+        e.preventDefault();
+        // Update active state
+        document.querySelectorAll('.header-nav-inner a').forEach(a => (a as HTMLElement).style.borderBottomColor = 'transparent');
+        (link as HTMLElement).style.borderBottomColor = '#e8450a';
+        // Fire the global setCat function that search.astro exposes
+        if (typeof (window as any).setCat === 'function') {
+          (window as any).setCat(cat);
+        }
+        return;
+      }
+
+      // On any other page — navigate to search with smooth transition
+      e.preventDefault();
+      document.body.style.opacity = '0';
+      document.body.style.transition = 'opacity 0.15s ease';
+      setTimeout(() => { window.location.href = href; }, 150);
+    });
+  });
+
+  // Fade in on page load for smooth feel
+  document.body.style.opacity = '0';
+  document.body.style.transition = 'opacity 0.2s ease';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { document.body.style.opacity = '1'; });
+  });
 
   // ── Auth state: update menu and account icon ──
   import { supabase } from '../lib/supabase';

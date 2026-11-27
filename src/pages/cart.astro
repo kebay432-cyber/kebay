@@ -3,17 +3,14 @@ export const prerender = true;
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { DEMO_PRODUCTS } from '../lib/demoData';
 
-const demoRecommended = [
-  { id:'demo-1', title:'Samsung Galaxy A55 5G', price:45000, image:'https://picsum.photos/seed/phone1/400/400' },
-  { id:'demo-2', title:'HP Laptop 15s Intel i5', price:68000, image:'https://picsum.photos/seed/laptop1/400/400' },
-  { id:'demo-3', title:'Nike Air Max 270', price:12000, image:'https://picsum.photos/seed/shoes1/400/400' },
-  { id:'demo-4', title:'Sony WH-1000XM5', price:35000, image:'https://picsum.photos/seed/audio1/400/400' },
-];
+// Pick 4 products from canonical demo data for the "you might like" section
+const demoRecommended = [DEMO_PRODUCTS[0], DEMO_PRODUCTS[6], DEMO_PRODUCTS[9], DEMO_PRODUCTS[3]].map(p => ({
+  id: p.id, title: p.title, price: p.price, image: p.images[0],
+}));
 function kshServer(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
 ---
-export const prerender = true;
-
 <Layout title="Cart — Kebay">
   <Header />
   <main>
@@ -88,6 +85,15 @@ export const prerender = true;
 <script>
   function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
 
+  function normalizeWA(phone: string) {
+    if (!phone) return '';
+    let p = phone.replace(/[\s\-\(\)]/g, '');
+    if (p.startsWith('+')) p = p.slice(1);
+    if (p.startsWith('07') || p.startsWith('01')) p = '254' + p.slice(1);
+    if (!p.startsWith('254')) p = '254' + p;
+    return p;
+  }
+
   function renderCart() {
     const cart: any[] = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
     const empty = document.getElementById('cartEmpty')!;
@@ -126,8 +132,9 @@ export const prerender = true;
       totalItems += group.items.reduce((s: number, i: any) => s + i.quantity, 0);
 
       const itemLines = group.items.map((i: any) => `• ${i.title} x${i.quantity} — ${ksh(i.price * i.quantity)}`).join('\n');
-      const waMsg = group.wa
-        ? `https://wa.me/${group.wa}?text=${encodeURIComponent(`Hi ${group.name}, I'd like to order from Kebay:\n${itemLines}\nTotal: ${ksh(sellerTotal)}\n\nPlease confirm.`)}`
+      const waPhone = normalizeWA(group.wa);
+      const waMsg = waPhone
+        ? `https://wa.me/${waPhone}?text=${encodeURIComponent(`Hi ${group.name}, I'd like to order from Kebay:\n${itemLines}\nTotal: ${ksh(sellerTotal)}\n\nPlease confirm.`)}`
         : '#';
 
       const itemsHtml = group.items.map((item: any, i: number) => {
@@ -180,7 +187,8 @@ export const prerender = true;
       .map((g: any) => {
         const itemLines = g.items.map((i: any) => `• ${i.title} x${i.quantity} — ${ksh(i.price * i.quantity)}`).join('\n');
         const sellerTotal = g.items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
-        return `https://wa.me/${g.wa}?text=${encodeURIComponent(`Hi ${g.name}, I'd like to order from Kebay:\n${itemLines}\nTotal: ${ksh(sellerTotal)}\n\nPlease confirm.`)}`;
+        const waPhone = normalizeWA(g.wa);
+        return `https://wa.me/${waPhone}?text=${encodeURIComponent(`Hi ${g.name}, I'd like to order from Kebay:\n${itemLines}\nTotal: ${ksh(sellerTotal)}\n\nPlease confirm.`)}`;
       });
 
     const checkoutAllBtn = document.getElementById('checkoutAllBtn')!;

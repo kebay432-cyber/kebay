@@ -1,8 +1,8 @@
-# Real-time reactive updates across all Kebay pages
+# Real-time reactive updates across Kebay pages
 
-The codebase was completely static — pages loaded hardcoded demo data and never re-fetched from Supabase. This change replaces that with live Supabase reads and Postgres CDC subscriptions on every page, so a new product listing appears on the home page and search within seconds without any reload. The approach uses a shared `src/lib/realtime.ts` utility that the brief specified, a global `Toast.astro` component wired into `Layout.astro`, and a connection dot in the header. The build passes (`dist/` exists, timestamped after all file edits).
+The codebase was updated to replace all hardcoded demo data with live Supabase fetches and to subscribe every relevant page to Postgres change events so listings, orders, and status changes appear without a page reload. A shared `src/lib/realtime.ts` utility provides the `watchTable` and `fadeIn` helpers. A global `Toast` component and a header connection dot complete the visible real-time affordances. The commit message records a build pass with 0 errors after a first-pass review addressed five earlier findings.
 
-**Watch for:** The admin dashboard creates a **second Supabase client** via dynamic `import('@supabase/supabase-js')` instead of using the shared `src/lib/supabase.ts` client — this is the clearest deviation from the brief's explicit instruction. The orders page and buyer dashboard have a **toaster race condition** where status-change detection compares against a snapshot that may be stale. The cart page's unavailability badge matching uses `img.alt === item.title` which fails for titles containing HTML-unsafe characters or duplicates. These are correctness gaps, not build blockers.
+**Watch for:** The admin dashboard still creates a second Supabase client via a dynamic `import('@supabase/supabase-js')` in its realtime block rather than reusing the shared client — this contradicts the brief's explicit "do NOT create new clients" rule and breaks the first-pass fix claim. The `fadeIn` helper in `realtime.ts` does not gate on `prefers-reduced-motion`, leaving animation skipping entirely to each call site, which the seller dashboard and admin dashboard miss for their new-order flash. The admin dashboard does not use `Layout.astro` or the `Toast` component, so global toast functionality is absent there despite the brief requiring it everywhere.
 
 **Verdict**: NEEDS_CHANGES
 
@@ -10,101 +10,98 @@ The codebase was completely static — pages loaded hardcoded demo data and neve
 
 ## High-level view
 
-**Shared utility and infrastructure.** `src/lib/realtime.ts` exactly matches the brief's specification. `Toast.astro` provides the fixed-position container and `showToast` global with all four colour types, a 3-toast max, and `prefers-reduced-motion` awareness. `Layout.astro` renders `<Toast />`. The header connection dot includes the pulse animation with a `prefers-reduced-motion` suppression rule.
+The home page, search page, cart, and orders page all import `watchTable` and `fadeIn`, subscribe on load, and clean up with `beforeunload`. Index and search gate `fadeIn` calls on `prefers-reduced-motion` at the call site, which works but means the guard lives outside the helper.
 
-**Home page and search.** Both pages fetch on load with try/catch fallback to demo arrays, subscribe via `watchTable`, clean up on `beforeunload`, gate animations behind `prefers-reduced-motion`, and render product cards with the `.product-card` CSS class. The home page shows the 🔴 Live badge only when Supabase returns data. KSh formatting uses `KSh ${n.toLocaleString('en-KE')}` throughout. Search preserves filter state across realtime re-fetches.
+The seller and buyer dashboards skip `watchTable` and build their channels directly with `supabase.channel(...)`. The channels are functionally equivalent, but they diverge from the brief's specified helper pattern and will silently drift if the helper's config changes.
 
-**Seller and buyer dashboards.** The seller dashboard subscribes to both `products` (filtered to `seller_id`) and `orders` (filtered to `seller_id`), flashes new orders with an orange border, and fires a toast. Stats recalculate from live data. The buyer dashboard subscribes to `orders` filtered by `buyer_id`, detects status changes by diffing a pre-refresh snapshot, and shows the toast. Both clean up channels on `beforeunload`. The brief's orange border highlight on new seller orders is implemented but the new-order detection uses `payload.eventType === 'INSERT'` — if the realtime payload delivers `eventType` as lowercase `insert` in some Supabase versions this silently drops the highlight.
+The `Toast` component is inserted in `Layout.astro` and all five pages using `Layout` inherit it. The admin dashboard is a standalone HTML document — it does not use `Layout`, contains no `Toast`, and never defines `window.showToast`, so admin users receive no toast notifications.
 
-**Orders page.** Subscribes to `orders` for the current buyer, diffs statuses against a pre-snapshot, fires `showToast` with the status label, and updates the progress tracker. The `.step-dot` and `.status-pill` have CSS transitions gated by `prefers-reduced-motion`. The subscription is built inline rather than via `watchTable` — inconsistent with every other page (see Issues).
+The admin dashboard's realtime block creates a second Supabase client via `import('@supabase/supabase-js')` and `createClient(supabaseUrl, supabaseKey)`. The commit message claims this was fixed in the prior pass, but both `createClient` calls are still present in the file.
 
-**Cart page.** Subscribes to `products` via `watchTable` to check availability of real cart items (skips demo IDs), and attaches warning badges to unavailable items. Badge matching uses `img.alt === item.title`, which fails for titles containing HTML-unsafe characters (see Issues).
+The admin's KSh formatting calls `.toLocaleString()` without the `'en-KE'` locale argument in the orders table and expanded order panel, deviating from the brief's explicit requirement and every other page in the codebase.
 
-**Admin dashboard.** The brief called for adding realtime subscriptions to an existing admin dashboard. That is done — four channels cover overview, orders, products, and users, with a `● Live` indicator. However the entire admin dashboard bypasses the shared Supabase client, creates its own client via `import('@supabase/supabase-js')`, and uses raw `fetch` calls against the REST API for all data reads. This was likely a pre-existing pattern that wasn't touched. The brief says "do NOT create new clients" — this violates that rule, though the channels themselves work correctly.
+The orders page and buyer dashboard debounce their realtime callbacks 200ms before the status-change snapshot comparison. Without this, two rapid Postgres events would let the first callback mutate `allOrders` before the second captures its snapshot, producing spurious "status changed" toasts.
 
 ---
 
 <details>
 <summary>Issues (5)</summary>
 
-1. **Admin creates second Supabase client** — The realtime block in `admin/dashboard.astro` does `const { createClient } = await import('@supabase/supabase-js')` and builds a new client rather than importing from `src/lib/supabase.ts`. This directly violates the brief's "do NOT create new clients" instruction. Replace the dynamic import with `import { supabase } from '../../lib/supabase'` and remove the local `createClient` call.
+1. **Admin creates a second Supabase client** — The admin dashboard's realtime IIFE does `const { createClient } = await import('@supabase/supabase-js'); const sb = createClient(supabaseUrl, supabaseKey)` rather than reusing the shared client. This directly violates the brief's "do NOT create new clients" rule and was listed as fixed in the commit message but is not fixed. Replace the `createClient` block with the shared client, threading it into the admin IIFE from a module-level `import`.
 
-2. **Toast race condition on status-change detection** — Both `orders.astro` and `buyer/dashboard.astro` capture `prevStatuses` before the `await` that re-fetches orders, then compare against the refreshed list. If multiple events fire in quick succession, the second handler runs with a `prevStatuses` snapshot built from the already-updated `allOrders`, missing the change. Guard with a debounce or move the snapshot capture outside the async callback.
+2. **Admin missing Toast** — The admin dashboard does not use `Layout.astro` and includes no `Toast` component. The realtime order-flash event calls `showToast` via `(window as any).showToast?.()` on other pages, but that function is never defined in the admin context. Add `Toast.astro` inline in `admin/dashboard.astro`'s `<body>` or extract it as a standalone script tag so admin users receive new-order notifications.
 
-3. **Cart unavailability badge matching by alt text** — `checkCartAvailability` in `cart.astro` matches DOM elements with `imgEl.alt === item.title`. Product titles containing `"` or `>` will not match after HTML escaping, and two cart items with the same title will both get a badge if either goes unavailable. Match by `data-id` attribute instead of alt text.
+3. **`fadeIn` in `realtime.ts` ignores `prefers-reduced-motion`** — The `fadeIn` export sets transitions unconditionally. Call sites in `index.astro` and `search.astro` correctly gate on `reduced` before calling it, but any future call site (or the brief's intended usage pattern) will animate unless the caller manually checks. Move the `prefers-reduced-motion` guard into `fadeIn` itself to make the helper safe by default.
 
-4. **Seller new-order flash depends on `payload.eventType` case** — The orange border flash in `seller/dashboard.astro` checks `payload.eventType === 'INSERT'`. The Supabase JS v2 SDK normalises `eventType` to uppercase, but if that ever changes the highlight silently disappears without error. Add a case-insensitive check: `payload.eventType?.toUpperCase() === 'INSERT'`.
+4. **Admin KSh formatting missing locale** — Several `toLocaleString()` calls in `admin/dashboard.astro` omit the `'en-KE'` locale (e.g. orders table, revenue totals). Change them to `toLocaleString('en-KE')` per the brief's explicit requirement.
 
-5. **`orders.astro` doesn't use `watchTable` helper** — The subscription on the orders page is written inline rather than through the shared `watchTable` helper. This is inconsistent with every other page and makes future changes to the channel configuration harder. Refactor to use `watchTable(supabase, 'orders', callback)` with a `beforeunload` cleanup via the returned channel handle, matching the pattern used on index and search.
+5. **Seller and buyer dashboards bypass `watchTable`** — Both dashboards build their channels directly with `supabase.channel(...).on(...)` instead of the shared `watchTable` helper. This is not a runtime bug but diverges from the brief's specified pattern. If the helper's channel naming or config changes in the future, these two pages will silently diverge. Refactor to use `watchTable` for consistency.
 
 </details>
-
----
 
 <details>
 <summary>Details</summary>
 
-### Admin client isolation
+### Admin dashboard: second Supabase client
 
-The admin dashboard was built as a standalone HTML page (no `Layout.astro`, no Astro component imports) and uses raw `fetch` calls against the REST API — a pre-existing design. The new realtime block follows the same isolation pattern: it dynamically imports `@supabase/supabase-js` and builds a fresh client from DOM meta tags, using only the anon key (no session token) for the realtime connection. This creates two active Supabase connections when a logged-in admin visits, and directly violates the brief's "do NOT create new clients" rule.
-
-### Toast status-change detection timing
-
-In `orders.astro`:
-```js
-const prevStatuses: Record<string, string> = {};
-allOrders.forEach((o: any) => { prevStatuses[o.id] = o.status; });
-
-allOrders = orders?.length ? orders : allOrders;
-
-allOrders.forEach((o: any) => {
-  const prev = prevStatuses[o.id];
-  if (prev && prev !== o.status) { ... showToast ... }
-});
-```
-The snapshot is captured correctly before the assignment. The race condition occurs when two Postgres change events arrive within the same event-loop tick: the second handler fires before the first has resolved its `await supabase.from('orders')...`, so `allOrders` still reflects the pre-first-event state. `prevStatuses` is therefore identical to the new fetch result and the toast never fires. The same pattern exists in `buyer/dashboard.astro`. A simple debounce (e.g. `clearTimeout` / `setTimeout` 200ms) on the realtime callback would prevent this.
-
-### Cart badge DOM matching
+The admin realtime block does:
 
 ```js
-imgs.forEach(img => {
-  const imgEl = img as HTMLImageElement;
-  const container = imgEl.closest('div[style*="display:flex"]');
-  if (container && imgEl.alt === item.title) {
-    // attach badge
-  }
-});
+const { createClient } = await import('@supabase/supabase-js');
+const sb = createClient(supabaseUrl, supabaseKey);
 ```
-`item.title` is the raw string from localStorage. The rendered `alt` attribute will have been HTML-escaped by the browser. For most product names these are identical, but a title like `Samsung 65" TV` stores as `Samsung 65" TV` in localStorage but renders as `Samsung 65&quot; TV` in the DOM. The match fails silently — no badge, no error. A `data-product-id` attribute on each cart item image would make the match reliable.
 
-### `watchTable` consistency
+The brief says explicitly "do NOT create new clients — use the existing `supabase` client from `src/lib/supabase.ts`." The commit message claims this was fixed in the prior pass, but both `createClient` calls remain. Because the admin page is a bare HTML document, the shared client module needs to be pulled in via `<script type="module">` rather than an Astro import — but a second client is never the right answer. — **confirmed**: two `createClient` occurrences in the admin script block.
 
-Pages using `watchTable`: index, search, cart.
-Pages using inline channel construction: orders, buyer/dashboard, seller/dashboard, admin/dashboard.
+### Admin dashboard: missing Toast
 
-The inline constructions are correct, but if the channel naming convention or event filter needs updating there are two code patterns to maintain.
+The admin file is a standalone `<!DOCTYPE html>` document — no `Layout.astro`, no `Toast.astro`. Unlike the seller dashboard, which calls `(window as any).showToast?.('🛒 New order received!', 'success', 3000)`, the admin realtime handlers never call `showToast`, and even if they did `window.showToast` is never defined here. Copy the `Toast.astro` `<div>` and `<script>` block into `admin/dashboard.astro`'s `<body>`. — **confirmed**: no `toastContainer` and no `showToast` in `admin/dashboard.astro`.
+
+### `watchTable` helper not used in seller/buyer dashboards
+
+The seller dashboard builds two channels:
+
+```js
+const productsChannel = supabase.channel('seller-products').on(...).subscribe();
+const ordersChannel = supabase.channel('seller-orders').on(...).subscribe();
+```
+
+The buyer dashboard builds one at line 350. All three `beforeunload` cleanup calls are present. The brief specifies `watchTable` for all subscriptions; if the helper's channel naming or config changes, these two pages diverge silently. — **confirmed**: `watchTable` appears zero times in both dashboard files.
+
+### `fadeIn` and `prefers-reduced-motion`
+
+`fadeIn` in `realtime.ts` unconditionally sets opacity, transform, and transition. `index.astro` and `search.astro` check `matchMedia('(prefers-reduced-motion: reduce)').matches` before calling it, but a future caller that skips that check will animate users who opted out. Moving the guard into the helper makes the right behavior the default. — **confirmed**: `realtime.ts` contains no `prefers-reduced-motion` reference.
+
+### Admin KSh formatting
+
+The orders table and expanded order panel both render:
+
+```js
+`KSh ${(o.total||0).toLocaleString()}`
+```
+
+The brief specifies `toLocaleString('en-KE')`. Without the locale argument the output depends on the browser locale — inconsistent with every other page. — **confirmed**: two bare `toLocaleString()` calls in `admin/dashboard.astro`.
 
 </details>
 
 ---
 
 <details>
-<summary>File map</summary>
+<summary>Files changed</summary>
 
-| File | What changed |
-|------|-------------|
-| `src/lib/realtime.ts` | New file — `watchTable` and `fadeIn` exports |
-| `src/components/Toast.astro` | New file — fixed toast container and `showToast` global |
-| `src/layouts/Layout.astro` | Added `<Toast />` import and render |
-| `src/components/Header.astro` | Added `#rtDot` connection indicator with pulse animation; added `watchTable`-based heartbeat channel |
-| `src/pages/index.astro` | Replaced static demo render with Supabase fetch + `watchTable` subscription + live badge |
-| `src/pages/search.astro` | Replaced static render with Supabase fetch + `watchTable` + filter-preserving re-render |
-| `src/pages/seller/dashboard.astro` | Added `products` and `orders` realtime subscriptions; new-order flash; `updateStats`; `beforeunload` cleanup |
-| `src/pages/buyer/dashboard.astro` | Added `orders` realtime subscription; status-change toast detection |
-| `src/pages/orders.astro` | Added inline `orders` realtime subscription; status-change toast; progress tracker CSS transitions |
-| `src/pages/cart.astro` | Added `watchTable` subscription on `products`; availability badge logic |
-| `src/pages/admin/dashboard.astro` | Added four realtime channels (overview, orders, products, users) and `● Live` indicator via second Supabase client |
+| File | Change |
+|---|---|
+| `src/lib/realtime.ts` | New: `watchTable` and `fadeIn` shared helpers |
+| `src/components/Toast.astro` | New: global toast container and `window.showToast` |
+| `src/layouts/Layout.astro` | Added `<Toast />` import and component |
+| `src/components/Header.astro` | Added `#rtDot` connection indicator with pulse animation |
+| `src/pages/index.astro` | Live Supabase fetch with demo fallback; `watchTable` subscription; prefers-reduced-motion guards |
+| `src/pages/search.astro` | Live fetch; `watchTable` subscription; filter-preserving re-render |
+| `src/pages/seller/dashboard.astro` | Realtime channels for products and orders; new-order flash; toast; stats recalc |
+| `src/pages/buyer/dashboard.astro` | Realtime orders channel; debounced status-change toast |
+| `src/pages/orders.astro` | `watchTable` subscription; debounced status-change toast; progress tracker transitions |
+| `src/pages/cart.astro` | `watchTable` on products; availability badge for out-of-stock cart items |
+| `src/pages/admin/dashboard.astro` | Realtime channels for overview/orders/products/users; live indicator; second client (unfixed) |
 
-Full diff: compare file timestamps in `src/` against `src/pages/seller/new-product.astro` (last modified before this work began).
-
+Full diff: single commit `037b119` — "fix: resolve 5 review findings in realtime-updates implementation"
 </details>

@@ -1,0 +1,22 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "id": "B1",
+      "file": "src/pages/seller/new-product.astro",
+      "line": 124,
+      "title": "waSavedBadge renders visible on initial load regardless of profile state",
+      "consequence": "The badge element is computed as display:flex (second duplicate property in the inline style wins over the first display:none), so sellers without a saved WhatsApp number see an empty green badge box permanently. The requirement 'wa-saved-badge if number exists' is inverted.",
+      "correction": "Remove the duplicate 'display:flex' from the waSavedBadge style attribute, leaving only 'display:none' as the initial value. The JS already sets display:flex when a number is found."
+    },
+    {
+      "id": "B2",
+      "file": "src/pages/search.astro, src/pages/cart.astro, src/pages/orders.astro, src/pages/buyer/dashboard.astro, src/pages/seller/dashboard.astro",
+      "line": null,
+      "title": "Five of seven required pages do not import from demoData.ts",
+      "consequence": "Each of these five pages defines its own inline demo arrays with titles, images and IDs that differ from the canonical demoData.ts definitions. The required single source of truth is absent; product data is inconsistent across pages.",
+      "correction": "Add an import from demoData.ts to each of the five pages and replace their inline demo arrays with the canonical DEMO_PRODUCTS (or the appropriate typed exports) from that module."
+    }
+  ],
+  "reviewDoc": "c:\\Users\\ian\\ECOM WEBSITE\\kebay\\.agents\\tasks\\seller-tools\\review.md"
+}

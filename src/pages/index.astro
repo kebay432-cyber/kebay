@@ -3,6 +3,7 @@ export const prerender = true;
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { DEMO_PRODUCTS, ksh } from '../lib/demoData';
 
 const categories = [
   { name: 'Phones',        img: '/61B9jz7fEeL._AC_UY218_.jpg',  slug: 'phones' },
@@ -24,18 +25,16 @@ const trending = [
   { name: 'Sports',       img: '/sports.jpg',        slug: 'sporting' },
 ];
 
-const demoProducts = [
-  { id: 'demo-1', title: 'Samsung Galaxy A55 5G',      price: 45000, original: 52000, image: 'https://picsum.photos/seed/phone1/400/400',  category: 'phones' },
-  { id: 'demo-2', title: 'HP Laptop 15s Intel i5',     price: 68000, original: 75000, image: 'https://picsum.photos/seed/laptop1/400/400', category: 'computers' },
-  { id: 'demo-3', title: 'Nike Air Max 270',            price: 12000, original: 15000, image: 'https://picsum.photos/seed/shoes1/400/400',  category: 'fashion' },
-  { id: 'demo-4', title: 'Sony WH-1000XM5 Headphones', price: 35000, original: 42000, image: 'https://picsum.photos/seed/audio1/400/400',  category: 'electronics' },
-  { id: 'demo-5', title: 'LG Smart TV 43"',             price: 55000, original: 65000, image: 'https://picsum.photos/seed/tv1/400/400',    category: 'electronics' },
-  { id: 'demo-6', title: 'Toyota Alloy Rims Set',       price: 28000, original: 32000, image: 'https://picsum.photos/seed/rims1/400/400',  category: 'motors' },
-];
-
-function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+// Use first 6 demo products for the homepage grid
+const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
+  id: p.id,
+  title: p.title,
+  price: p.price,
+  original: p.original,
+  image: p.images[0],
+  category: p.category,
+}));
 ---
-export const prerender = true;
 
 <Layout title="Kebay — Kenya's Marketplace">
   <Header />
@@ -256,14 +255,28 @@ export const prerender = true;
     }
   })();
 
-  // ── Demo product data for fallback ──
+  // ── Demo product data for fallback (all 20) ──
   const DEMO = [
-    { id: 'demo-1', title: 'Samsung Galaxy A55 5G',      price: 45000, original: 52000, image: 'https://picsum.photos/seed/phone1/400/400' },
-    { id: 'demo-2', title: 'HP Laptop 15s Intel i5',     price: 68000, original: 75000, image: 'https://picsum.photos/seed/laptop1/400/400' },
-    { id: 'demo-3', title: 'Nike Air Max 270',            price: 12000, original: 15000, image: 'https://picsum.photos/seed/shoes1/400/400' },
-    { id: 'demo-4', title: 'Sony WH-1000XM5 Headphones', price: 35000, original: 42000, image: 'https://picsum.photos/seed/audio1/400/400' },
-    { id: 'demo-5', title: 'LG Smart TV 43"',             price: 55000, original: 65000, image: 'https://picsum.photos/seed/tv1/400/400' },
-    { id: 'demo-6', title: 'Toyota Alloy Rims Set',       price: 28000, original: 32000, image: 'https://picsum.photos/seed/rims1/400/400' },
+    { id:'demo-1',  title:'Samsung Galaxy A55 5G 128GB',        price:45000,  original_price:52000,  image:'https://picsum.photos/seed/samsung-a55-1/400/400' },
+    { id:'demo-2',  title:'iPhone 14 Pro Max 256GB',            price:145000, original_price:165000, image:'https://picsum.photos/seed/iphone14-pro-1/400/400' },
+    { id:'demo-3',  title:'HP Laptop 15s Intel Core i5 11th Gen', price:68000, original_price:75000, image:'https://picsum.photos/seed/hp-laptop-15s-1/400/400' },
+    { id:'demo-4',  title:'MacBook Air M2 8GB 256GB',           price:128000, original_price:142000, image:'https://picsum.photos/seed/macbook-air-m2-1/400/400' },
+    { id:'demo-5',  title:'Sony WH-1000XM5 Wireless Headphones', price:35000, original_price:42000, image:'https://picsum.photos/seed/sony-xm5-1/400/400' },
+    { id:'demo-6',  title:'LG Smart TV 43" Full HD WebOS',      price:55000,  original_price:65000,  image:'https://picsum.photos/seed/lg-tv-43-1/400/400' },
+    { id:'demo-7',  title:'Nike Air Max 270 — Size 42',         price:12000,  original_price:15000,  image:'https://picsum.photos/seed/nike-airmax-270-1/400/400' },
+    { id:'demo-8',  title:'Kitenge Dress — Ankara Print Medium', price:2500,  original_price:3200,   image:'https://picsum.photos/seed/kitenge-dress-1/400/400' },
+    { id:'demo-9',  title:'Toyota Alloy Rims 15" Set of 4',     price:28000,  original_price:32000,  image:'https://picsum.photos/seed/toyota-rims-1/400/400' },
+    { id:'demo-10', title:'Vitron 2-Door Fridge 120L',          price:22000,  original_price:26000,  image:'https://picsum.photos/seed/vitron-fridge-1/400/400' },
+    { id:'demo-11', title:'L-Shaped Sofa Set 5-Seater',         price:65000,  original_price:80000,  image:'https://picsum.photos/seed/sofa-lshape-1/400/400' },
+    { id:'demo-12', title:'Nunix 2-Plate Electric Cooker',      price:2800,   original_price:3500,   image:'https://picsum.photos/seed/nunix-cooker-1/400/400' },
+    { id:'demo-13', title:'Kipchoge Running Shoes — Size 43',   price:4500,   original_price:6000,   image:'https://picsum.photos/seed/running-shoes-1/400/400' },
+    { id:'demo-14', title:'Football — FIFA Quality Pro',        price:3200,   original_price:4000,   image:'https://picsum.photos/seed/football-pro-1/400/400' },
+    { id:'demo-15', title:'Tecno Spark 20 Pro 128GB',           price:18500,  original_price:21000,  image:'https://picsum.photos/seed/tecno-spark20-1/400/400' },
+    { id:'demo-16', title:'Citizen Solar Watch — Men\'s',       price:25000,  original_price:30000,  image:'https://picsum.photos/seed/citizen-watch-1/400/400' },
+    { id:'demo-17', title:'Ramtons Blender 1.5L 600W',          price:3500,   original_price:4200,   image:'https://picsum.photos/seed/ramtons-blender-1/400/400' },
+    { id:'demo-18', title:'DJI Mini 3 Drone with RC-N1',        price:95000,  original_price:110000, image:'https://picsum.photos/seed/dji-mini3-1/400/400' },
+    { id:'demo-19', title:'Mahindra Tractor Spare Parts Kit',   price:8500,   original_price:11000,  image:'https://picsum.photos/seed/tractor-parts-1/400/400' },
+    { id:'demo-20', title:'Chess Set — Handcarved Kisii Stone', price:4800,   original_price:6000,   image:'https://picsum.photos/seed/kisii-chess-1/400/400' },
   ];
 
   function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }

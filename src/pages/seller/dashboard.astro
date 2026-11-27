@@ -243,8 +243,18 @@ import Footer from '../../components/Footer.astro';
 
 <script>
   import { supabase } from '../../lib/supabase';
+  import { DEMO_PRODUCTS } from '../../lib/demoData';
 
   function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+
+  function normalizeWA(phone: string) {
+    if (!phone) return '';
+    let p = phone.replace(/[\s\-\(\)]/g, '');
+    if (p.startsWith('+')) p = p.slice(1);
+    if (p.startsWith('07') || p.startsWith('01')) p = '254' + p.slice(1);
+    if (!p.startsWith('254')) p = '254' + p;
+    return p;
+  }
 
   const statusStyle: Record<string, string> = {
     pending:   'background:#fff9c4;color:#856404;',
@@ -254,15 +264,14 @@ import Footer from '../../components/Footer.astro';
   };
   const statusIcon: Record<string, string> = { pending:'⏳', confirmed:'✅', shipped:'🚚', delivered:'🎉' };
 
-  const demoProducts = [
-    { id:'demo-1', title:'Samsung Galaxy A55 5G 128GB', price:45000, description:'Brand new Samsung Galaxy A55 5G.', images:['https://picsum.photos/seed/phone1/300/200'], category:'phones', stock:3, is_active:true },
-    { id:'demo-2', title:'HP Laptop 15s Intel Core i5', price:68000, description:'HP 15s, Intel Core i5.', images:['https://picsum.photos/seed/laptop1/300/200'], category:'computers', stock:5, is_active:true },
-    { id:'demo-3', title:'Nike Air Max 270', price:12000, description:'Authentic Nike Air Max 270.', images:['https://picsum.photos/seed/shoes1/300/200'], category:'fashion', stock:2, is_active:false },
-  ];
+  const demoProducts = DEMO_PRODUCTS.slice(0, 3).map(p => ({
+    id: p.id, title: p.title, price: p.price, description: p.description,
+    images: p.images, category: p.category, stock: p.stock, is_active: true,
+  }));
   const demoOrders = [
-    { id:'ord-001', products:{ title:'Samsung Galaxy A55', images:['https://picsum.photos/seed/phone1/80/80'], price:45000 }, quantity:1, status:'pending', buyer_wa:'254712000001' },
-    { id:'ord-002', products:{ title:'HP Laptop 15s', images:['https://picsum.photos/seed/laptop1/80/80'], price:68000 }, quantity:1, status:'confirmed', buyer_wa:'254722000002' },
-    { id:'ord-003', products:{ title:'Nike Air Max 270', images:['https://picsum.photos/seed/shoes1/80/80'], price:12000 }, quantity:2, status:'delivered', buyer_wa:'254733000003' },
+    { id:'ord-001', products:{ title: DEMO_PRODUCTS[0].title, images: DEMO_PRODUCTS[0].images, price: DEMO_PRODUCTS[0].price }, quantity:1, status:'pending', buyer_wa: DEMO_PRODUCTS[0].seller.whatsapp },
+    { id:'ord-002', products:{ title: DEMO_PRODUCTS[3].title, images: DEMO_PRODUCTS[3].images, price: DEMO_PRODUCTS[3].price }, quantity:1, status:'confirmed', buyer_wa: DEMO_PRODUCTS[3].seller.whatsapp },
+    { id:'ord-003', products:{ title: DEMO_PRODUCTS[9].title, images: DEMO_PRODUCTS[9].images, price: DEMO_PRODUCTS[9].price }, quantity:2, status:'delivered', buyer_wa: DEMO_PRODUCTS[9].seller.whatsapp },
   ];
 
   // ── Tab switching ──
@@ -354,7 +363,7 @@ import Footer from '../../components/Footer.astro';
               `<option value="${s}" ${o.status===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`
             ).join('')}
           </select>
-          ${o.buyer_wa ? `<a href="https://wa.me/${o.buyer_wa}" target="_blank"
+          ${o.buyer_wa ? `<a href="https://wa.me/${normalizeWA(o.buyer_wa)}" target="_blank"
             style="font-size:12px;background:#25D366;color:#fff;padding:4px 10px;border-radius:50px;font-weight:600;">💬 Chat</a>` : ''}
         </div>
       </div>`).join('');

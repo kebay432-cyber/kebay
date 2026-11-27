@@ -8,8 +8,6 @@ import Footer from '../components/Footer.astro';
 const q   = Astro.url.searchParams.get('q')   || '';
 const cat = Astro.url.searchParams.get('cat') || '';
 ---
-export const prerender = true;
-
 <Layout title="Search — Kebay">
   <Header />
 
@@ -87,29 +85,20 @@ export const prerender = true;
 <script>
   import { supabase } from '../lib/supabase';
   import { watchTable } from '../lib/realtime';
+  import { DEMO_PRODUCTS } from '../lib/demoData';
 
   // Pick up injected values (or fall back to URL params)
   const initialQ = (window as any).__kebayInitQ || '';
   const initialCat = (window as any).__kebayInitCat || '';
-  // ── All products data (fallback) ──
-  const ALL_PRODUCTS_DEMO = [
-    { id:'demo-1',  title:'Samsung Galaxy A55 5G 128GB',        price:45000,  image:'https://picsum.photos/seed/phone1/400/400',    category:'phones',     seller:'TechHub Kenya' },
-    { id:'demo-2',  title:'HP Laptop 15s Intel Core i5 8GB',    price:68000,  image:'https://picsum.photos/seed/laptop1/400/400',   category:'computers',  seller:'PC World' },
-    { id:'demo-3',  title:'Nike Air Max 270 Black/White',        price:12000,  image:'https://picsum.photos/seed/shoes1/400/400',    category:'fashion',    seller:'Sneaker Zone' },
-    { id:'demo-4',  title:'Sony WH-1000XM5 Headphones',         price:35000,  image:'https://picsum.photos/seed/audio1/400/400',    category:'electronics',seller:'AudioPro' },
-    { id:'demo-5',  title:'LG Smart TV 43" Full HD',             price:55000,  image:'https://picsum.photos/seed/tv1/400/400',       category:'electronics',seller:'Electronics Plus' },
-    { id:'demo-6',  title:'Toyota Corolla Alloy Rims 15"',       price:28000,  image:'https://picsum.photos/seed/rims1/400/400',     category:'motors',     seller:'AutoParts KE' },
-    { id:'demo-7',  title:'iPhone 15 Pro 256GB Natural Titanium',price:185000, image:'https://picsum.photos/seed/iphone/400/400',    category:'phones',     seller:'iStore Nairobi' },
-    { id:'demo-8',  title:'Dell XPS 13 Core i7 16GB RAM',        price:145000, image:'https://picsum.photos/seed/dell/400/400',      category:'computers',  seller:'PC World' },
-    { id:'demo-9',  title:'Leather Sofa Set 3+2 Seater',         price:85000,  image:'https://picsum.photos/seed/sofa1/400/400',     category:'home',       seller:'Home Decor KE' },
-    { id:'demo-10', title:'Nike Premier League Football',         price:3500,   image:'https://picsum.photos/seed/ball1/400/400',     category:'sporting',   seller:'Sports Hub' },
-    { id:'demo-11', title:'Kids Remote Control Racing Car',       price:4500,   image:'https://picsum.photos/seed/toy1/400/400',     category:'toys',       seller:'Toy World' },
-    { id:'demo-12', title:'Canon EOS M50 Camera Kit',             price:78000,  image:'https://picsum.photos/seed/camera1/400/400',  category:'electronics',seller:'Photo Kenya' },
-    { id:'demo-13', title:'Samsung QLED 55" Smart TV',            price:120000, image:'https://picsum.photos/seed/tv2/400/400',       category:'electronics',seller:'Electronics Plus' },
-    { id:'demo-14', title:'Adidas Ultraboost Running Shoes',      price:18000,  image:'https://picsum.photos/seed/shoes2/400/400',   category:'fashion',    seller:'Sneaker Zone' },
-    { id:'demo-15', title:'Toyota Fielder 2018 Manual',           price:2200000,image:'https://picsum.photos/seed/car1/400/400',     category:'motors',     seller:'AutoParts KE' },
-    { id:'demo-16', title:'PlayStation 5 Console 825GB',          price:85000,  image:'https://picsum.photos/seed/ps5/400/400',      category:'gaming',     seller:'TechHub Kenya' },
-  ];
+  // ── All products data (fallback) — from canonical demoData.ts ──
+  const ALL_PRODUCTS_DEMO = DEMO_PRODUCTS.map(p => ({
+    id: p.id,
+    title: p.title,
+    price: p.price,
+    image: p.images[0],
+    category: p.category,
+    seller: p.seller.name,
+  }));
 
   const CATEGORIES = [
     { name:'All',           slug:'',           icon:'' },

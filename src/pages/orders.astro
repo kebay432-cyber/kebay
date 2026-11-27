@@ -72,6 +72,17 @@ import Footer from '../components/Footer.astro';
 <script>
   import { supabase } from '../lib/supabase';
   import { watchTable } from '../lib/realtime';
+  import { DEMO_PRODUCTS } from '../lib/demoData';
+
+  function normalizeWA(phone: string) {
+    if (!phone) return '';
+    let p = phone.replace(/[\s\-\(\)]/g, '');
+    if (p.startsWith('+')) p = p.slice(1);
+    if (p.startsWith('07') || p.startsWith('01')) p = '254' + p.slice(1);
+    if (!p.startsWith('254')) p = '254' + p;
+    return p;
+  }
+
   if (new URLSearchParams(window.location.search).get('success') === '1') {
     document.getElementById('successBanner')!.style.display = 'block';
   }
@@ -90,18 +101,18 @@ import Footer from '../components/Footer.astro';
   const demoOrders = [
     {
       id:'ORD-KBY-001', status:'delivered', quantity:1, created_at:'2026-11-20T10:00:00Z',
-      products:{ id:'demo-1', title:'Samsung Galaxy A55 5G 128GB', images:['https://picsum.photos/seed/phone1/300/300'], price:45000,
-        profiles:{ full_name:'TechHub Kenya', whatsapp_number:'254712345678' } }
+      products:{ id: DEMO_PRODUCTS[0].id, title: DEMO_PRODUCTS[0].title, images: DEMO_PRODUCTS[0].images, price: DEMO_PRODUCTS[0].price,
+        profiles:{ full_name: DEMO_PRODUCTS[0].seller.name, whatsapp_number: DEMO_PRODUCTS[0].seller.whatsapp } }
     },
     {
       id:'ORD-KBY-002', status:'shipped', quantity:1, created_at:'2026-11-22T14:00:00Z',
-      products:{ id:'demo-2', title:'HP Laptop 15s Intel Core i5', images:['https://picsum.photos/seed/laptop1/300/300'], price:68000,
-        profiles:{ full_name:'PC World', whatsapp_number:'254722345678' } }
+      products:{ id: DEMO_PRODUCTS[3].id, title: DEMO_PRODUCTS[3].title, images: DEMO_PRODUCTS[3].images, price: DEMO_PRODUCTS[3].price,
+        profiles:{ full_name: DEMO_PRODUCTS[3].seller.name, whatsapp_number: DEMO_PRODUCTS[3].seller.whatsapp } }
     },
     {
       id:'ORD-KBY-003', status:'pending', quantity:2, created_at:'2026-11-24T09:00:00Z',
-      products:{ id:'demo-3', title:'Nike Air Max 270', images:['https://picsum.photos/seed/shoes1/300/300'], price:12000,
-        profiles:{ full_name:'Sneaker Zone', whatsapp_number:'254733345678' } }
+      products:{ id: DEMO_PRODUCTS[9].id, title: DEMO_PRODUCTS[9].title, images: DEMO_PRODUCTS[9].images, price: DEMO_PRODUCTS[9].price,
+        profiles:{ full_name: DEMO_PRODUCTS[9].seller.name, whatsapp_number: DEMO_PRODUCTS[9].seller.whatsapp } }
     },
   ];
 
@@ -123,8 +134,8 @@ import Footer from '../components/Footer.astro';
       const p = o.products;
       const currentStep = steps.indexOf(o.status);
       const date = new Date(o.created_at).toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' });
-      const waText = encodeURIComponent(`Hi, following up on my order for: ${p?.title} — Order #${o.id}`);
-      const waLink = p?.profiles?.whatsapp_number ? `https://wa.me/${p.profiles.whatsapp_number}?text=${waText}` : '#';
+      const waText = encodeURIComponent(`Hi ${p?.profiles?.full_name || 'Seller'}, following up on my order for: ${p?.title} — Order ref: ${o.id}`);
+      const waLink = p?.profiles?.whatsapp_number ? `https://wa.me/${normalizeWA(p.profiles.whatsapp_number)}?text=${waText}` : '#';
 
       return `
         <div class="order-card">

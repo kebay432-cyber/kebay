@@ -1,11 +1,11 @@
 {
   "verdict": "CHANGES_REQUESTED",
   "findings": [
-    "Admin creates second Supabase client — realtime block in admin/dashboard.astro does `const { createClient } = await import('@supabase/supabase-js')` instead of importing from src/lib/supabase.ts, violating the brief's explicit rule. Replace with `import { supabase } from '../../lib/supabase'`.",
-    "Toast race condition on status-change detection — both orders.astro and buyer/dashboard.astro can miss status-change toasts when two Postgres events arrive in quick succession (second handler sees allOrders already updated, so prevStatuses diff produces no changes). Add a debounce on the realtime callback.",
-    "Cart unavailability badge matching by alt text — checkCartAvailability matches DOM images by `imgEl.alt === item.title`, which fails for titles containing HTML-unsafe characters like quotes. Add a data-product-id attribute to cart item images and match by that instead.",
-    "Seller new-order flash depends on payload.eventType case — the orange border flash checks `payload.eventType === 'INSERT'` (uppercase). If the SDK ever delivers lowercase, the highlight silently disappears. Use `payload.eventType?.toUpperCase() === 'INSERT'`.",
-    "orders.astro doesn't use watchTable helper — the orders page subscription is built inline rather than via the shared watchTable utility, inconsistent with index, search, and cart. Refactor to watchTable(supabase, 'orders', callback) with a beforeunload cleanup via the returned channel handle."
+    "Admin creates a second Supabase client — the realtime IIFE in admin/dashboard.astro does `const { createClient } = await import('@supabase/supabase-js'); const sb = createClient(supabaseUrl, supabaseKey)` instead of reusing the shared client from src/lib/supabase.ts. The commit message claimed this was fixed but both createClient calls remain.",
+    "Admin missing Toast — admin/dashboard.astro is a standalone HTML document with no Layout.astro and no Toast component. window.showToast is never defined there, so admin users receive no toast notifications. Copy the Toast div+script block into the admin page body.",
+    "fadeIn in realtime.ts ignores prefers-reduced-motion — the helper unconditionally sets transitions. Call sites in index.astro and search.astro guard externally, but any future caller that skips the check will animate users who opted out. Move the guard into the helper.",
+    "Admin KSh formatting missing locale — toLocaleString() calls in admin/dashboard.astro orders table and expanded order panel omit the 'en-KE' argument, deviating from the brief's explicit requirement and every other page.",
+    "Seller and buyer dashboards bypass watchTable — both build channels directly with supabase.channel(...).on(...) instead of the shared watchTable helper, diverging from the brief's specified pattern."
   ],
   "reviewDoc": "c:\\Users\\ian\\ECOM WEBSITE\\kebay\\.agents\\tasks\\realtime-updates\\review.md"
 }

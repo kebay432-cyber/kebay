@@ -1,273 +1,55 @@
-export interface DemoProduct {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  original_price: number;
-  image: string;
-  images: string[];
-  category: string;
-  stock: number;
-  seller: {
-    id: string;
-    name: string;
-    whatsapp: string;
-    rating: number;
-    sales: number;
-  };
-}
-
-export const demoProducts: DemoProduct[] = [
-  {
-    id: 'demo-1',
-    title: 'Samsung Galaxy A55 5G 128GB',
-    description: 'Brand new Samsung Galaxy A55 5G. 6.6\" Super AMOLED display, 50MP triple camera, 5000mAh battery. Ships from Nairobi with 1-year local warranty. Perfect for content creators and professionals.',
-    price: 45000,
-    original_price: 52000,
-    image: 'https://picsum.photos/seed/samsung-a55/400/400',
-    images: ['https://picsum.photos/seed/samsung-a55-1/600/600', 'https://picsum.photos/seed/samsung-a55-2/600/600'],
-    category: 'phones',
-    stock: 3,
-    seller: { id: 'seller-demo-1', name: 'Nairobi Tech Hub', whatsapp: '254712345678', rating: 4.8, sales: 142 }
-  },
-  {
-    id: 'demo-2',
-    title: 'iPhone 14 Pro Max 256GB',
-    description: 'Apple iPhone 14 Pro Max. 48MP ProRAW camera, Dynamic Island, A16 Bionic chip. Space Black. Bought abroad, Kenyan warranty seal intact. Free delivery within Nairobi.',
-    price: 145000,
-    original_price: 165000,
-    image: 'https://picsum.photos/seed/iphone14-pro/400/400',
-    images: ['https://picsum.photos/seed/iphone14-pro-1/600/600', 'https://picsum.photos/seed/iphone14-pro-2/600/600'],
-    category: 'phones',
-    stock: 2,
-    seller: { id: 'seller-demo-2', name: 'Nairobi Tech Hub', whatsapp: '254712345678', rating: 4.9, sales: 89 }
-  },
-  {
-    id: 'demo-3',
-    title: 'HP Laptop 15s Intel Core i5 11th Gen',
-    description: 'HP 15s, Intel Core i5-1135G7, 8GB RAM, 512GB SSD, 15.6\" FHD IPS. Windows 11 Home. Ideal for university students and remote workers in Kenya. Fast, reliable, and light.',
-    price: 68000,
-    original_price: 75000,
-    image: 'https://picsum.photos/seed/hp-laptop-15s/400/400',
-    images: ['https://picsum.photos/seed/hp-laptop-15s-1/600/600', 'https://picsum.photos/seed/hp-laptop-15s-2/600/600'],
-    category: 'computers',
-    stock: 5,
-    seller: { id: 'seller-demo-3', name: 'Mombasa Tech Store', whatsapp: '254722345678', rating: 4.7, sales: 67 }
-  },
-  {
-    id: 'demo-4',
-    title: 'MacBook Air M2 8GB 256GB',
-    description: 'Apple MacBook Air with M2 chip. 13.6\" Liquid Retina display, 18-hour battery, fanless design. Silver. Brand new, sealed box. Best laptop for creatives and developers in Kenya.',
-    price: 128000,
-    original_price: 142000,
-    image: 'https://picsum.photos/seed/macbook-air-m2/400/400',
-    images: ['https://picsum.photos/seed/macbook-air-m2-1/600/600', 'https://picsum.photos/seed/macbook-air-m2-2/600/600'],
-    category: 'computers',
-    stock: 2,
-    seller: { id: 'seller-demo-3', name: 'Mombasa Tech Store', whatsapp: '254722345678', rating: 4.9, sales: 55 }
-  },
-  {
-    id: 'demo-5',
-    title: 'Sony WH-1000XM5 Wireless Headphones',
-    description: 'Sony WH-1000XM5. Industry-leading noise cancellation, 30-hour battery, multipoint connection. Perfect for Nairobi commuters on matatu or working from home. Sealed box.',
-    price: 35000,
-    original_price: 42000,
-    image: 'https://picsum.photos/seed/sony-xm5/400/400',
-    images: ['https://picsum.photos/seed/sony-xm5-1/600/600', 'https://picsum.photos/seed/sony-xm5-2/600/600'],
-    category: 'electronics',
-    stock: 4,
-    seller: { id: 'seller-demo-4', name: 'Kisumu Electronics', whatsapp: '254733345678', rating: 4.9, sales: 55 }
-  },
-  {
-    id: 'demo-6',
-    title: 'LG Smart TV 43\" Full HD WebOS',
-    description: 'LG 43\" Smart TV, Full HD 1080p, WebOS 22, built-in WiFi, Bluetooth. Access Netflix, YouTube, Showmax. Free wall-mount bracket. Free delivery within Nairobi and Kiambu.',
-    price: 55000,
-    original_price: 65000,
-    image: 'https://picsum.photos/seed/lg-tv-43/400/400',
-    images: ['https://picsum.photos/seed/lg-tv-43-1/600/600', 'https://picsum.photos/seed/lg-tv-43-2/600/600'],
-    category: 'electronics',
-    stock: 2,
-    seller: { id: 'seller-demo-5', name: 'Kisumu Electronics', whatsapp: '254733345678', rating: 4.6, sales: 38 }
-  },
-  {
-    id: 'demo-7',
-    title: 'Nike Air Max 270 — Size 42',
-    description: 'Authentic Nike Air Max 270. Black/white colourway, size EU 42 (UK 8). Brand new with original box. Imported directly. Popular with Nairobi youth. Limited stock.',
-    price: 12000,
-    original_price: 15000,
-    image: 'https://picsum.photos/seed/nike-airmax-270/400/400',
-    images: ['https://picsum.photos/seed/nike-airmax-270-1/600/600', 'https://picsum.photos/seed/nike-airmax-270-2/600/600'],
-    category: 'fashion',
-    stock: 2,
-    seller: { id: 'seller-demo-6', name: 'Mombasa Fashion House', whatsapp: '254744345678', rating: 4.7, sales: 67 }
-  },
-  {
-    id: 'demo-8',
-    title: 'Kitenge Dress — Ankara Print Medium',
-    description: 'Handmade Kenyan Kitenge dress, Ankara fabric, vibrant multi-colour print. Medium size. Tailored in Nairobi. Perfect for weddings, harambees, and casual Fridays. Machine washable.',
-    price: 2500,
-    original_price: 3200,
-    image: 'https://picsum.photos/seed/kitenge-dress/400/400',
-    images: ['https://picsum.photos/seed/kitenge-dress-1/600/600', 'https://picsum.photos/seed/kitenge-dress-2/600/600'],
-    category: 'fashion',
-    stock: 8,
-    seller: { id: 'seller-demo-6', name: 'Mombasa Fashion House', whatsapp: '254744345678', rating: 4.8, sales: 203 }
-  },
-  {
-    id: 'demo-9',
-    title: 'Toyota Alloy Rims 15\" Set of 4',
-    description: 'Set of 4 genuine Toyota alloy rims, 15 inch, fits Corolla, Fielder, Axio (2010–2022). With good-condition Bridgestone tyres 195/65 R15. Located in Ngong Road, Nairobi.',
-    price: 28000,
-    original_price: 32000,
-    image: 'https://picsum.photos/seed/toyota-rims/400/400',
-    images: ['https://picsum.photos/seed/toyota-rims-1/600/600', 'https://picsum.photos/seed/toyota-rims-2/600/600'],
-    category: 'motors',
-    stock: 1,
-    seller: { id: 'seller-demo-7', name: 'Nairobi Auto Parts', whatsapp: '254755345678', rating: 4.5, sales: 23 }
-  },
-  {
-    id: 'demo-10',
-    title: 'Vitron 2-Door Fridge 120L',
-    description: 'Vitron VR130DF 120-litre double-door refrigerator. Energy-saving compressor, vegetable crisper, interior light. Ideal for Nairobi bedsitters and small families. 1-year local warranty.',
-    price: 22000,
-    original_price: 26000,
-    image: 'https://picsum.photos/seed/vitron-fridge/400/400',
-    images: ['https://picsum.photos/seed/vitron-fridge-1/600/600', 'https://picsum.photos/seed/vitron-fridge-2/600/600'],
-    category: 'home',
-    stock: 3,
-    seller: { id: 'seller-demo-8', name: 'Nakuru Home Furnishings', whatsapp: '254766345678', rating: 4.6, sales: 41 }
-  },
-  {
-    id: 'demo-11',
-    title: 'L-Shaped Sofa Set 5-Seater',
-    description: 'Modern L-shaped sofa, brown leather finish, solid wood frame. 5-seater. Includes 3 throw pillows. Manufactured in Kenya. Free delivery within Nairobi. Assembly included.',
-    price: 65000,
-    original_price: 80000,
-    image: 'https://picsum.photos/seed/sofa-lshape/400/400',
-    images: ['https://picsum.photos/seed/sofa-lshape-1/600/600', 'https://picsum.photos/seed/sofa-lshape-2/600/600'],
-    category: 'home',
-    stock: 2,
-    seller: { id: 'seller-demo-8', name: 'Nakuru Home Furnishings', whatsapp: '254766345678', rating: 4.7, sales: 18 }
-  },
-  {
-    id: 'demo-12',
-    title: 'Nunix 2-Plate Electric Cooker',
-    description: 'Nunix 2-plate electric hot plate cooker. 2000W, stainless steel surface, cool-touch body. Ideal for hostels, bedsitters, and quick meals. Saves on gas costs. Widely used in Kenya.',
-    price: 2800,
-    original_price: 3500,
-    image: 'https://picsum.photos/seed/nunix-cooker/400/400',
-    images: ['https://picsum.photos/seed/nunix-cooker-1/600/600', 'https://picsum.photos/seed/nunix-cooker-2/600/600'],
-    category: 'home',
-    stock: 10,
-    seller: { id: 'seller-demo-8', name: 'Nakuru Home Furnishings', whatsapp: '254766345678', rating: 4.4, sales: 88 }
-  },
-  {
-    id: 'demo-13',
-    title: 'Kipchoge Running Shoes — Size 43',
-    description: 'Professional running shoes inspired by Kenyan athletics culture. Lightweight mesh upper, cushioned sole, anti-slip. Size EU 43. Great for Karura Forest joggers and Uhuru Park walkers.',
-    price: 4500,
-    original_price: 6000,
-    image: 'https://picsum.photos/seed/running-shoes/400/400',
-    images: ['https://picsum.photos/seed/running-shoes-1/600/600', 'https://picsum.photos/seed/running-shoes-2/600/600'],
-    category: 'sporting',
-    stock: 6,
-    seller: { id: 'seller-demo-9', name: 'Eldoret Sports World', whatsapp: '254777345678', rating: 4.6, sales: 54 }
-  },
-  {
-    id: 'demo-14',
-    title: 'Football — FIFA Quality Pro',
-    description: 'FIFA Quality Pro match football, size 5. Used by Kenya Premier League teams. Durable synthetic leather, perfect weight and balance. Comes with a hand pump. Ship to any county.',
-    price: 3200,
-    original_price: 4000,
-    image: 'https://picsum.photos/seed/football-pro/400/400',
-    images: ['https://picsum.photos/seed/football-pro-1/600/600', 'https://picsum.photos/seed/football-pro-2/600/600'],
-    category: 'sporting',
-    stock: 15,
-    seller: { id: 'seller-demo-9', name: 'Eldoret Sports World', whatsapp: '254777345678', rating: 4.5, sales: 120 }
-  },
-  {
-    id: 'demo-15',
-    title: 'Tecno Spark 20 Pro 128GB',
-    description: 'Tecno Spark 20 Pro. 6.78\" FHD+ display, 108MP AI camera, 5000mAh battery, 18W fast charge. Gravity Black. Best budget smartphone for Kenyan students and business people.',
-    price: 18500,
-    original_price: 21000,
-    image: 'https://picsum.photos/seed/tecno-spark20/400/400',
-    images: ['https://picsum.photos/seed/tecno-spark20-1/600/600', 'https://picsum.photos/seed/tecno-spark20-2/600/600'],
-    category: 'phones',
-    stock: 8,
-    seller: { id: 'seller-demo-1', name: 'Nairobi Tech Hub', whatsapp: '254712345678', rating: 4.6, sales: 198 }
-  },
-  {
-    id: 'demo-16',
-    title: 'Citizen Solar Watch — Men\'s',
-    description: 'Citizen Eco-Drive solar-powered watch for men. Stainless steel case and bracelet, sapphire glass, water-resistant to 100m. Never needs a battery. Ships from Nairobi CBD.',
-    price: 25000,
-    original_price: 30000,
-    image: 'https://picsum.photos/seed/citizen-watch/400/400',
-    images: ['https://picsum.photos/seed/citizen-watch-1/600/600', 'https://picsum.photos/seed/citizen-watch-2/600/600'],
-    category: 'fashion',
-    stock: 3,
-    seller: { id: 'seller-demo-6', name: 'Mombasa Fashion House', whatsapp: '254744345678', rating: 4.7, sales: 32 }
-  },
-  {
-    id: 'demo-17',
-    title: 'Ramtons Blender 1.5L 600W',
-    description: 'Ramtons RM/315 blender. 1.5-litre glass jar, 600W motor, stainless steel blades, 3-speed settings. Ideal for making mango juice, avocado smoothies, and githeri. Kenyan brand.',
-    price: 3500,
-    original_price: 4200,
-    image: 'https://picsum.photos/seed/ramtons-blender/400/400',
-    images: ['https://picsum.photos/seed/ramtons-blender-1/600/600', 'https://picsum.photos/seed/ramtons-blender-2/600/600'],
-    category: 'home',
-    stock: 7,
-    seller: { id: 'seller-demo-8', name: 'Nakuru Home Furnishings', whatsapp: '254766345678', rating: 4.5, sales: 76 }
-  },
-  {
-    id: 'demo-18',
-    title: 'DJI Mini 3 Drone with RC-N1',
-    description: 'DJI Mini 3 camera drone. 4K/60fps video, 48MP photo, 38-min flight time, under 249g (no KAA registration required in Kenya). Perfect for filming Kenyan landscapes and events.',
-    price: 95000,
-    original_price: 110000,
-    image: 'https://picsum.photos/seed/dji-mini3/400/400',
-    images: ['https://picsum.photos/seed/dji-mini3-1/600/600', 'https://picsum.photos/seed/dji-mini3-2/600/600'],
-    category: 'electronics',
-    stock: 1,
-    seller: { id: 'seller-demo-4', name: 'Kisumu Electronics', whatsapp: '254733345678', rating: 4.8, sales: 12 }
-  },
-  {
-    id: 'demo-19',
-    title: 'Mahindra Tractor Spare Parts Kit',
-    description: 'Genuine Mahindra tractor spare parts bundle: oil filter, air filter, fan belt, spark plugs. Compatible with Mahindra 575 and 605 models widely used in Kenyan farms.',
-    price: 8500,
-    original_price: 11000,
-    image: 'https://picsum.photos/seed/tractor-parts/400/400',
-    images: ['https://picsum.photos/seed/tractor-parts-1/600/600', 'https://picsum.photos/seed/tractor-parts-2/600/600'],
-    category: 'motors',
-    stock: 4,
-    seller: { id: 'seller-demo-7', name: 'Nairobi Auto Parts', whatsapp: '254755345678', rating: 4.4, sales: 29 }
-  },
-  {
-    id: 'demo-20',
-    title: 'Chess Set — Handcarved Kisii Stone',
-    description: 'Authentic hand-carved chess set made from Kisii soapstone, crafted by artisans in Kisii County. Each piece is unique. Comes in a wooden storage box. Great gift and collector item.',
-    price: 4800,
-    original_price: 6000,
-    image: 'https://picsum.photos/seed/kisii-chess/400/400',
-    images: ['https://picsum.photos/seed/kisii-chess-1/600/600', 'https://picsum.photos/seed/kisii-chess-2/600/600'],
-    category: 'collectibles',
-    stock: 5,
-    seller: { id: 'seller-demo-10', name: 'Kisumu Craft Village', whatsapp: '254788345678', rating: 4.9, sales: 44 }
-  }
+export const DEMO_PRODUCTS = [
+  { id:'demo-1',  title:'Samsung Galaxy A55 5G 128GB',           price:45000,   original:52000,   images:['https://picsum.photos/seed/samsung-a55/600/600'],     category:'phones',      stock:3,  description:'Brand new Samsung Galaxy A55 5G. 6.6" AMOLED, 50MP camera, 5000mAh battery. Nairobi delivery available. Warranty included.',           seller:{ id:'seller-1', name:'Nairobi Tech Hub',       whatsapp:'254712345678', rating:4.8, sales:142 } },
+  { id:'demo-2',  title:'iPhone 15 Pro 256GB Natural Titanium',   price:185000,  original:195000,  images:['https://picsum.photos/seed/iphone15pro/600/600'],     category:'phones',      stock:2,  description:'Apple iPhone 15 Pro 256GB. Genuine sealed box. Free screen protector included. Westlands pickup or delivery.',                             seller:{ id:'seller-2', name:'iStore Nairobi',          whatsapp:'254722345678', rating:4.9, sales:89  } },
+  { id:'demo-3',  title:'Tecno Camon 20 Pro 8GB RAM 256GB',       price:28000,   original:32000,   images:['https://picsum.photos/seed/tecno-camon/600/600'],     category:'phones',      stock:5,  description:'Tecno Camon 20 Pro with 8GB RAM and 256GB storage. Best camera phone in this price range in Kenya.',                                      seller:{ id:'seller-1', name:'Nairobi Tech Hub',       whatsapp:'254712345678', rating:4.8, sales:142 } },
+  { id:'demo-4',  title:'HP Laptop 15s Intel Core i5 8GB RAM',    price:68000,   original:75000,   images:['https://picsum.photos/seed/hp-laptop/600/600'],       category:'computers',   stock:4,  description:'HP 15s Intel Core i5 11th gen, 8GB RAM, 512GB SSD, Windows 11. Perfect for work and study. Delivery within Nairobi.',                   seller:{ id:'seller-3', name:'PC World Kenya',         whatsapp:'254733345678', rating:4.7, sales:67  } },
+  { id:'demo-5',  title:'MacBook Air M2 13" 8GB 256GB Midnight',   price:165000,  original:180000,  images:['https://picsum.photos/seed/macbook-m2/600/600'],      category:'computers',   stock:1,  description:'Apple MacBook Air M2 chip, 13-inch, 8GB RAM, 256GB SSD. Midnight colour. Original receipt available.',                                    seller:{ id:'seller-3', name:'PC World Kenya',         whatsapp:'254733345678', rating:4.7, sales:67  } },
+  { id:'demo-6',  title:'Dell XPS 13 Core i7 16GB 512GB SSD',     price:145000,  original:160000,  images:['https://picsum.photos/seed/dell-xps/600/600'],        category:'computers',   stock:2,  description:'Dell XPS 13 9310, i7 11th gen, 16GB LPDDR4, 512GB SSD. Ultra-thin premium laptop. Great condition.',                                     seller:{ id:'seller-3', name:'PC World Kenya',         whatsapp:'254733345678', rating:4.7, sales:67  } },
+  { id:'demo-7',  title:'Sony WH-1000XM5 Wireless Headphones',    price:35000,   original:42000,   images:['https://picsum.photos/seed/sony-xm5/600/600'],        category:'electronics', stock:4,  description:'Sony WH-1000XM5 wireless noise cancelling. 30hr battery, multipoint, touch controls. Black. Brand new sealed.',                          seller:{ id:'seller-4', name:'AudioPro Kenya',         whatsapp:'254744345678', rating:4.9, sales:55  } },
+  { id:'demo-8',  title:'LG 43" Full HD Smart TV WebOS',           price:55000,   original:65000,   images:['https://picsum.photos/seed/lg-tv/600/600'],           category:'electronics', stock:2,  description:'LG 43" Full HD Smart TV. WebOS, built-in WiFi, 3x HDMI. Magic remote included. Free delivery Nairobi.',                                  seller:{ id:'seller-5', name:'Electronics Plus KE',    whatsapp:'254755345678', rating:4.6, sales:38  } },
+  { id:'demo-9',  title:'Canon EOS M50 Mark II Camera Kit',        price:78000,   original:88000,   images:['https://picsum.photos/seed/canon-m50/600/600'],       category:'electronics', stock:2,  description:'Canon EOS M50 Mark II with 15-45mm lens. 24.1MP, 4K video, eye-tracking AF. Brand new with warranty.',                                   seller:{ id:'seller-6', name:'Photo Kenya',            whatsapp:'254766345678', rating:4.8, sales:28  } },
+  { id:'demo-10', title:'Nike Air Max 270 Black/White Size 42',    price:12000,   original:15000,   images:['https://picsum.photos/seed/nike-am270/600/600'],      category:'fashion',     stock:2,  description:'Authentic Nike Air Max 270. Black/white colourway. UK Size 8 (EU 42). Brand new with original box.',                                      seller:{ id:'seller-7', name:'Sneaker Zone KE',        whatsapp:'254777345678', rating:4.7, sales:94  } },
+  { id:'demo-11', title:'Premium Leather Handbag Brown',           price:4500,    original:6000,    images:['https://picsum.photos/seed/handbag-brown/600/600'],   category:'fashion',     stock:8,  description:'Premium leather handbag, brown. Spacious interior, zip closure. Great for office or casual use. Available in Nairobi.',                  seller:{ id:'seller-8', name:'Mombasa Fashion House',  whatsapp:'254788345678', rating:4.5, sales:201 } },
+  { id:'demo-12', title:'3+2 Leather Sofa Set Dark Brown',         price:85000,   original:100000,  images:['https://picsum.photos/seed/sofa-leather/600/600'],    category:'home',        stock:1,  description:'Premium 3+2 seater leather sofa set. Dark brown finish. Solid hardwood frame. Free delivery within Nairobi.',                             seller:{ id:'seller-9', name:'Home Decor Kenya',       whatsapp:'254799345678', rating:4.4, sales:32  } },
+  { id:'demo-13', title:'Blueflame 3 Burner Gas Cooker with Oven', price:18500,   original:22000,   images:['https://picsum.photos/seed/gas-cooker/600/600'],      category:'home',        stock:3,  description:'Blueflame 3-burner gas cooker with oven. Stainless steel finish. Auto ignition. Brand new in box.',                                        seller:{ id:'seller-9', name:'Home Decor Kenya',       whatsapp:'254799345678', rating:4.4, sales:32  } },
+  { id:'demo-14', title:'Toyota Fielder 2018 Silver Manual',       price:1850000, original:1950000, images:['https://picsum.photos/seed/toyota-fielder/600/600'],  category:'motors',      stock:1,  description:'2018 Toyota Fielder, 1500cc, manual transmission, silver. Low mileage, accident-free. Logbook ready. Nairobi.',                           seller:{ id:'seller-10',name:'AutoParts KE',           whatsapp:'254711345678', rating:4.5, sales:15  } },
+  { id:'demo-15', title:'Toyota Corolla Alloy Rims 15" Set of 4',  price:28000,   original:32000,   images:['https://picsum.photos/seed/alloy-rims/600/600'],      category:'motors',      stock:1,  description:'Set of 4 Toyota Corolla alloy rims 15 inch. Fits 2010-2020 models. Good condition. Comes with tyres.',                                    seller:{ id:'seller-10',name:'AutoParts KE',           whatsapp:'254711345678', rating:4.5, sales:15  } },
+  { id:'demo-16', title:'Nike Premier League Football Size 5',     price:3500,    original:4500,    images:['https://picsum.photos/seed/football-nike/600/600'],   category:'sporting',    stock:10, description:'Official Nike Premier League match ball size 5. High visibility design. Suitable for training or competitive matches.',                  seller:{ id:'seller-11',name:'Sports Hub Kenya',       whatsapp:'254722445678', rating:4.6, sales:88  } },
+  { id:'demo-17', title:'Foldable Treadmill Home Gym 110kg',       price:45000,   original:55000,   images:['https://picsum.photos/seed/treadmill/600/600'],       category:'sporting',    stock:2,  description:'Foldable treadmill for home use. Speed 1-12km/h, LCD display, heart rate monitor. Max 110kg capacity. Assembly included.',               seller:{ id:'seller-11',name:'Sports Hub Kenya',       whatsapp:'254722445678', rating:4.6, sales:88  } },
+  { id:'demo-18', title:'PlayStation 5 Console 825GB Disc Edition',price:85000,   original:95000,   images:['https://picsum.photos/seed/ps5-console/600/600'],     category:'gaming',      stock:1,  description:'Sony PlayStation 5 Disc Edition 825GB. Comes with 1 DualSense controller. Brand new sealed box.',                                         seller:{ id:'seller-1', name:'Nairobi Tech Hub',       whatsapp:'254712345678', rating:4.8, sales:142 } },
+  { id:'demo-19', title:'Maasai Beaded Jewellery Set Handmade',    price:2500,    original:3500,    images:['https://picsum.photos/seed/maasai-jewellery/600/600'],category:'collectibles', stock:15, description:'Authentic handmade Maasai beaded necklace, bracelet and earrings set. Genuine Kenyan craft. Gift-ready packaging.',                       seller:{ id:'seller-12',name:'Kenya Crafts Store',     whatsapp:'254733445678', rating:4.9, sales:312 } },
+  { id:'demo-20', title:'Kikoy Beach Wrap 100% Cotton Vibrant',    price:1200,    original:1800,    images:['https://picsum.photos/seed/kikoy-wrap/600/600'],      category:'collectibles', stock:20, description:'Traditional Kenyan Kikoy beach wrap. 100% cotton, vibrant colours. Lightweight and quick-dry. Perfect as a gift.',                        seller:{ id:'seller-12',name:'Kenya Crafts Store',     whatsapp:'254733445678', rating:4.9, sales:312 } },
 ];
 
+export function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
+
+export function normalizeWA(phone: string): string {
+  if (!phone) return '';
+  let p = phone.replace(/[\s\-\(\)\+]/g, '');
+  if (p.startsWith('07') || p.startsWith('01')) p = '254' + p.slice(1);
+  if (!p.startsWith('254')) p = '254' + p;
+  return p;
+}
+
+export function buildWALink(phone: string, message: string): string {
+  const p = normalizeWA(phone);
+  if (!p) return '#';
+  return `https://wa.me/${p}?text=${encodeURIComponent(message)}`;
+}
+
+export type DemoProduct = typeof DEMO_PRODUCTS[0];
+
 export function getDemoProductById(id: string): DemoProduct | undefined {
-  return demoProducts.find(p => p.id === id);
+  return DEMO_PRODUCTS.find(p => p.id === id);
 }
 
 export function getDemoProductsByCategory(category: string): DemoProduct[] {
-  return demoProducts.filter(p => p.category === category);
+  return DEMO_PRODUCTS.filter(p => p.category === category);
 }
 
 export function getStaticProductPaths() {
-  return demoProducts.map(p => ({ params: { id: p.id } }));
+  return DEMO_PRODUCTS.map(p => ({ params: { id: p.id } }));
 }
+
+// Convenience alias for pages that import demoProducts (lowercase)
+export const demoProducts = DEMO_PRODUCTS;
