@@ -168,7 +168,7 @@ function kshServer(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
             ${group.wa ? `<a href="${waMsg}" target="_blank"
               style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#25D366;color:#fff;padding:12px;border-radius:50px;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;">
               💬 Message ${group.name}
-            </a>` : `<a href="/checkout"
+            </a>` : `<a href="${(window as any).BASE_URL||''}/checkout"
               style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#25D366;color:#fff;padding:12px;border-radius:50px;font-size:14px;font-weight:700;text-decoration:none;box-sizing:border-box;">
               💬 Message Seller
             </a>`}
