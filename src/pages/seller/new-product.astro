@@ -449,7 +449,7 @@ import Footer from '../../components/Footer.astro';
 
     if (!user) {
       localStorage.setItem('kebay_draft_product', JSON.stringify({ title, category, price, originalPrice, stock, description, whatsapp }));
-      window.location.href = '/auth/register?role=seller&redirect=/seller/new-product';
+      window.location.href = (window as any).BASE_URL + '/auth/register?role=seller&redirect=/seller/new-product';
       return;
     }
 
@@ -510,10 +510,10 @@ import Footer from '../../components/Footer.astro';
 
     successEl.innerHTML = `
       ✅ Product listed! Product ID: <strong>${data.id}</strong><br>
-      <a href="/product/${data.id}" style="color:#1a7a4a;font-weight:700;">View listing →</a>
+      <a href="${(window as any).BASE_URL || ''}/product/${data.id}" style="color:#1a7a4a;font-weight:700;">View listing →</a>
     `;
     successEl.style.display = 'block';
     btn.textContent = '✅ Published!';
-    setTimeout(() => { window.location.href = '/seller/dashboard'; }, 2000);
+    setTimeout(() => { window.location.href = (window as any).BASE_URL + '/seller/dashboard'; }, 2000);
   });
 </script>

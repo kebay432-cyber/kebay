@@ -46,7 +46,7 @@ import Footer from '../components/Footer.astro';
 
       <!-- Auth notice -->
       <div id="authNotice" style="display:none;padding:14px 18px;background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;margin-bottom:20px;font-size:14px;">
-        💡 <a href="/auth/signin" style="color:#e8450a;font-weight:700;">Sign in</a> to see your real orders.
+        💡 <a id="ordersSignInLink" href="#" style="color:#e8450a;font-weight:700;">Sign in</a> to see your real orders.
         Showing demo data for now.
       </div>
 
@@ -55,7 +55,7 @@ import Footer from '../components/Footer.astro';
         <div style="font-size:56px;margin-bottom:16px;">📦</div>
         <div style="font-size:18px;font-weight:700;color:#333;margin-bottom:8px;">No orders found</div>
         <p style="margin-bottom:20px;">When you buy from sellers via WhatsApp, your orders appear here.</p>
-        <a href="/search" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">Shop Now</a>
+        <a id="ordersShopLink" href="#" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">Shop Now</a>
       </div>
 
       <!-- Success banner from checkout -->
@@ -142,12 +142,12 @@ import Footer from '../components/Footer.astro';
         <div class="order-card">
           <!-- Main row -->
           <div style="display:flex;gap:12px;align-items:flex-start;padding:14px;">
-            <a href="/product/${p?.id}">
+            <a href="${(window.BASE_URL||'')}/product/${p?.id}">
               <img src="${p?.images?.[0] || 'https://picsum.photos/80'}"
                 style="width:76px;height:76px;object-fit:cover;border-radius:10px;background:#f5f5f5;flex-shrink:0;" />
             </a>
             <div style="flex:1;min-width:0;">
-              <a href="/product/${p?.id}" style="font-weight:700;font-size:15px;line-height:1.3;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;">
+              <a href="${(window.BASE_URL||'')}/product/${p?.id}" style="font-weight:700;font-size:15px;line-height:1.3;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#111;">
                 ${p?.title || 'Product'}
               </a>
               <div style="font-size:15px;font-weight:900;color:#111;margin-top:4px;">${ksh((p?.price || 0) * o.quantity)}</div>
@@ -178,7 +178,7 @@ import Footer from '../components/Footer.astro';
 
           <!-- Action row -->
           <div style="display:flex;gap:8px;padding:0 14px 14px;">
-            <a href="/product/${p?.id}"
+            <a href="${(window.BASE_URL||'')}/product/${p?.id}"
               style="flex:1;text-align:center;padding:9px;border-radius:8px;background:#f5f5f5;font-size:13px;font-weight:600;color:#333;">
               View Product
             </a>
@@ -197,7 +197,7 @@ import Footer from '../components/Footer.astro';
   }
 
   (window as any)._reorder = (productId: string) => {
-    window.location.href = `/product/${productId}`;
+    window.location.href = ((window as any).BASE_URL || '') + `/product/${productId}`;
   };
 
   document.getElementById('filterStatus')?.addEventListener('change', renderOrders);
@@ -228,6 +228,13 @@ import Footer from '../components/Footer.astro';
   }
 
   loadOrders();
+
+  // Set BASE_URL-aware links
+  const _B = (window as any).BASE_URL || '';
+  const signinLink = document.getElementById('ordersSignInLink') as HTMLAnchorElement;
+  const shopLink   = document.getElementById('ordersShopLink')   as HTMLAnchorElement;
+  if (signinLink) signinLink.href = _B + '/auth/signin';
+  if (shopLink)   shopLink.href   = _B + '/search';
 
   // ── Realtime subscription ──
   supabase.auth.getUser().then(({ data: { user } }) => {

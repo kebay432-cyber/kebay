@@ -23,10 +23,8 @@ function kshServer(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
           <div style="font-size:56px;margin-bottom:12px;">🛒</div>
           <div style="font-size:18px;font-weight:700;color:#333;margin-bottom:6px;">Your cart is empty</div>
           <p style="color:#888;margin-bottom:24px;">Browse products and add items to get started.</p>
-          <a href="/search" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">Shop Now</a>
+          <a id="cartShopNowBtn" href="#" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">Shop Now</a>
         </div>
-
-        <!-- Recommended products -->
         <div style="margin-top:8px;">
           <h3 style="font-size:16px;font-weight:800;margin-bottom:14px;">You might like</h3>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;" id="recommendedGrid">
@@ -57,7 +55,7 @@ function kshServer(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
             <span style="font-weight:900;font-size:20px;color:#111;" id="grandTotal">KSh 0</span>
           </div>
           <p style="font-size:13px;color:#888;margin-bottom:20px;">Delivery arranged directly with each seller via WhatsApp.</p>
-          <a href="/checkout"
+          <a id="cartCheckoutBtn" href="#"
             style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:#e8450a;color:#fff;padding:16px;border-radius:50px;font-size:17px;font-weight:700;text-decoration:none;box-sizing:border-box;">
             🛍️ Proceed to Checkout
           </a>
@@ -65,7 +63,7 @@ function kshServer(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
             style="display:none;width:100%;background:#25D366;color:#fff;padding:16px;border-radius:50px;font-size:16px;font-weight:700;cursor:pointer;border:none;box-sizing:border-box;">
             💬 Checkout All (WhatsApp)
           </button>
-          <a href="/search"
+          <a id="cartContinueBtn" href="#"
             style="display:block;text-align:center;margin-top:12px;padding:14px;border-radius:50px;background:#f5f5f5;color:#333;font-weight:600;font-size:15px;">
             Continue Shopping
           </a>
@@ -237,6 +235,15 @@ function kshServer(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
   });
 
   renderCart();
+
+  // Set BASE_URL-aware links
+  const _B = (window as any).BASE_URL || '';
+  const shopNowBtn = document.getElementById('cartShopNowBtn') as HTMLAnchorElement;
+  const continueBtn = document.getElementById('cartContinueBtn') as HTMLAnchorElement;
+  const checkoutBtn = document.getElementById('cartCheckoutBtn') as HTMLAnchorElement;
+  if (shopNowBtn)  shopNowBtn.href  = _B + '/search';
+  if (continueBtn) continueBtn.href = _B + '/search';
+  if (checkoutBtn) checkoutBtn.href = _B + '/checkout';
 
   // ── Subscribe to products table to flag unavailable cart items ──
   import { supabase } from '../lib/supabase';

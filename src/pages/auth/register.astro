@@ -4,8 +4,8 @@ import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 
 const role = Astro.url.searchParams.get('role') || 'buyer';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
-export const prerender = true;
 
 <Layout title="Register — Kebay">
   <Header />
@@ -83,7 +83,7 @@ export const prerender = true;
           </a>
           <p style="color:#666;font-size:14px;margin-top:6px;">Create your buyer account</p>
           <p style="font-size:13px;margin-top:8px;">
-            Are you a seller? <a href="/auth/register?role=seller" style="color:#e8450a;font-weight:700;">Register here →</a>
+            Are you a seller? <a href={`${base}/auth/register?role=seller`} style="color:#e8450a;font-weight:700;">Register here →</a>
           </p>
         </div>
 
@@ -105,7 +105,7 @@ export const prerender = true;
           </p>
         </form>
         <div class="signin-link">
-          Already have an account? <a href="/auth/signin">Sign in →</a>
+          Already have an account? <a href={`${base}/auth/signin`}>Sign in →</a>
         </div>
       </div>
 
@@ -117,7 +117,7 @@ export const prerender = true;
           </a>
           <p style="color:#444;font-size:15px;font-weight:600;margin-top:8px;">Seller Registration</p>
           <p style="font-size:13px;color:#888;margin-top:4px;">
-            Buyer? <a href="/auth/register?role=buyer" style="color:#e8450a;font-weight:700;">Register here →</a>
+            Buyer? <a href={`${base}/auth/register?role=buyer`} style="color:#e8450a;font-weight:700;">Register here →</a>
           </p>
         </div>
 
@@ -399,7 +399,7 @@ export const prerender = true;
 
     if (error) {
       let msg = error.message;
-      if (msg.includes('already registered') || msg.includes('already been registered')) msg = 'An account with this email already exists. <a href="/auth/signin" style="color:#c0392b;font-weight:700;">Sign in instead →</a>';
+      if (msg.includes('already registered') || msg.includes('already been registered')) msg = 'An account with this email already exists. <a href="' + ((window as any).BASE_URL||'') + '/auth/signin" style="color:#c0392b;font-weight:700;">Sign in instead →</a>';
       err.innerHTML = msg; err.style.display = 'block';
       btn.textContent = 'Register as Seller'; btn.disabled = false;
       return;
@@ -412,10 +412,10 @@ export const prerender = true;
     btn.textContent = '✅ Registered!';
     if (data.session) {
       localStorage.setItem('kebay_role', 'seller');
-      window.location.href = '/seller/dashboard';
+      window.location.href = (window as any).BASE_URL + '/seller/dashboard';
     } else {
       btn.textContent = '✅ Check your email to confirm, then sign in.';
-      setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
+      setTimeout(() => { window.location.href = (window as any).BASE_URL + '/auth/signin'; }, 3000);
     }
   };
 
@@ -442,7 +442,7 @@ export const prerender = true;
 
     if (error) {
       let msg = error.message;
-      if (msg.includes('already registered') || msg.includes('already been registered')) msg = 'An account with this email already exists. <a href="/auth/signin" style="color:#c0392b;font-weight:700;">Sign in instead →</a>';
+      if (msg.includes('already registered') || msg.includes('already been registered')) msg = 'An account with this email already exists. <a href="' + ((window as any).BASE_URL||'') + '/auth/signin" style="color:#c0392b;font-weight:700;">Sign in instead →</a>';
       err.innerHTML = msg; err.style.display = 'block';
       btn.textContent = 'Create Account'; btn.disabled = false;
       return;
@@ -455,11 +455,11 @@ export const prerender = true;
     if (data.session) {
       localStorage.setItem('kebay_role', 'buyer');
       suc.textContent = '✅ Account created! Redirecting…'; suc.style.display = 'block';
-      setTimeout(() => { window.location.href = '/'; }, 1200);
+      setTimeout(() => { window.location.href = (window as any).BASE_URL + '/'; }, 1200);
     } else {
       suc.textContent = '✅ Account created! Check your email to confirm.'; suc.style.display = 'block';
       btn.textContent = '✅ Done!';
-      setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
+      setTimeout(() => { window.location.href = (window as any).BASE_URL + '/auth/signin'; }, 3000);
     }
   });
 </script>

@@ -248,7 +248,7 @@ const supaKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
     <div style="font-size:48px;margin-bottom:16px;">🔒</div>
     <h1 style="font-size:22px;font-weight:800;margin-bottom:8px;">Access Denied</h1>
     <p style="color:#666;margin-bottom:20px;">You need admin privileges to view this page.</p>
-    <a href="/auth/signin" style="display:inline-block;padding:11px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;text-decoration:none;">Sign In as Admin</a>
+    <a id="adminSignInLink" href="#" style="display:inline-block;padding:11px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;text-decoration:none;">Sign In as Admin</a>
   </div>
 </div>
 
@@ -302,7 +302,7 @@ const supaKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
       Platform Settings
     </a>
-    <a href="/" target="_blank" class="nav-link">
+    <a id="viewStoreLink" href="#" target="_blank" class="nav-link">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       View Store
     </a>
@@ -382,7 +382,7 @@ const supaKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
           <select id="productCatFilter"><option value="">All Categories</option></select>
           <select id="productStatusFilter"><option value="">All Status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
           <div class="spacer"></div>
-          <a href="/seller/new-product" class="btn-primary" style="text-decoration:none">+ Add Product</a>
+          <a href="${(window.BASE_URL||'')}/seller/new-product" class="btn-primary" style="text-decoration:none">+ Add Product</a>
         </div>
         <table>
           <thead><tr><th>Image</th><th>Title</th><th>Seller</th><th>Category</th><th>Price (KSh)</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
@@ -668,8 +668,18 @@ const supaKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
   // ── SIGN OUT ──
   document.getElementById('signOutBtn').addEventListener('click',async()=>{
     Object.keys(localStorage).filter(k=>k.includes('-auth-token')).forEach(k=>localStorage.removeItem(k));
-    window.location.href='/auth/signin';
+    const _B = window.BASE_URL || '';
+    window.location.href = _B + '/auth/signin';
   });
+
+  // Set dynamic BASE_URL links for admin
+  (function() {
+    const _B = window.BASE_URL || '';
+    const adminSignInLink = document.getElementById('adminSignInLink');
+    if (adminSignInLink) adminSignInLink.href = _B + '/auth/signin';
+    const viewStoreLink = document.getElementById('viewStoreLink');
+    if (viewStoreLink) viewStoreLink.href = _B + '/';
+  })();
 
   // ── TAB 1: OVERVIEW ──
   async function loadOverview(){
@@ -810,7 +820,7 @@ const supaKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
         <td>KSh ${(p.price||0).toLocaleString('en-KE')}</td><td>${p.stock??'—'}</td>
         <td><span class="status-badge status-${p.is_active?'active':'inactive'}">${p.is_active?'Active':'Inactive'}</span></td>
         <td style="white-space:nowrap">
-          <a href="/product/${esc(p.id)}" target="_blank" class="btn-icon">View</a>
+          <a href="${(window.BASE_URL||'')}/product/${esc(p.id)}" target="_blank" class="btn-icon">View</a>
           <button class="btn-icon" onclick="toggleProduct('${esc(p.id)}',${!p.is_active})">${p.is_active?'Deactivate':'Activate'}</button>
           <button class="btn-danger" onclick="deleteProduct('${esc(p.id)}')">Delete</button>
         </td>

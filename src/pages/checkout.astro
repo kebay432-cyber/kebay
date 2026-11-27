@@ -31,7 +31,7 @@ import Footer from '../components/Footer.astro';
       <div id="emptyCart" style="display:none;text-align:center;padding:60px 20px;">
         <div style="font-size:56px;margin-bottom:12px;">🛒</div>
         <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Your cart is empty</div>
-        <a href="/search" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">Shop Now</a>
+        <a id="checkoutShopLink" href="#" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">Shop Now</a>
       </div>
 
       <div id="checkoutContent" class="checkout-layout">
@@ -230,9 +230,17 @@ import Footer from '../components/Footer.astro';
       window.dispatchEvent(new Event('kebay:cart-updated'));
       document.getElementById('successBanner')!.style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      setTimeout(() => { window.location.href = '/orders?success=1'; }, 2000);
+      const _B = (window as any).BASE_URL || '';
+      setTimeout(() => { window.location.href = _B + '/orders?success=1'; }, 2000);
     }
   };
 
   init();
+
+  // Set dynamic BASE_URL links
+  (function() {
+    const _B = (window as any).BASE_URL || '';
+    const shopLink = document.getElementById('checkoutShopLink') as HTMLAnchorElement;
+    if (shopLink) shopLink.href = _B + '/search';
+  })();
 </script>

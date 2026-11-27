@@ -295,9 +295,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         e.preventDefault();
         document.querySelectorAll('.header-nav-inner a').forEach(a => (a as HTMLElement).style.borderBottomColor = 'transparent');
         (link as HTMLElement).style.borderBottomColor = '#e8450a';
-        if (typeof (window as any).setCat === 'function') {
-          (window as any).setCat(cat);
-        }
+        if (typeof (window as any).setCat === 'function') (window as any).setCat(cat);
         return;
       }
       e.preventDefault();
@@ -310,25 +308,27 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   // Fade in on page load
   document.body.style.opacity = '0';
   document.body.style.transition = 'opacity 0.2s ease';
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => { document.body.style.opacity = '1'; });
-  });
+  requestAnimationFrame(() => requestAnimationFrame(() => { document.body.style.opacity = '1'; }));
 
-  // ── Auth state ──
+  // ── Auth state (async, non-blocking) ──
   import { supabase } from '../lib/supabase';
 
   async function updateAuthUI() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const menuAuth      = document.getElementById('menuAuth')!;
-      const accountBtn    = document.getElementById('accountIconBtn') as HTMLAnchorElement | null;
-      const accountInner  = document.getElementById('accountIconInner');
+      const menuAuth     = document.getElementById('menuAuth')!;
+      const accountBtn   = document.getElementById('accountIconBtn') as HTMLAnchorElement | null;
+      const accountInner = document.getElementById('accountIconInner');
 
       if (session) {
-        const name = session.user?.user_metadata?.full_name || session.user?.email || 'User';
+        const name    = session.user?.user_metadata?.full_name || session.user?.email || 'User';
         const initial = name.charAt(0).toUpperCase();
-        const role = localStorage.getItem('kebay_role') || 'buyer';
+
+        // Fetch role from profile
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user!.id).single();
+        const role      = profile?.role || localStorage.getItem('kebay_role') || 'buyer';
         const dashboard = role === 'seller' ? `${B}/seller/dashboard` : role === 'admin' ? `${B}/admin/dashboard` : `${B}/buyer/dashboard`;
+        localStorage.setItem('kebay_role', role);
 
         menuAuth.innerHTML = `
           <div style="width:100%;display:flex;flex-direction:column;gap:8px;">
@@ -340,7 +340,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         document.getElementById('signOutBtn')?.addEventListener('click', async () => {
           await supabase.auth.signOut();
           localStorage.removeItem('kebay_role');
-          window.location.reload();
+          window.location.href = B + '/';
         });
 
         if (accountBtn) accountBtn.href = dashboard;
@@ -355,19 +355,14 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   // ── Realtime connection dot ──
   (async () => {
     try {
-      const channel = supabase.channel('rt-heartbeat');
-      channel.subscribe((status: string) => {
+      const ch = supabase.channel('rt-heartbeat');
+      ch.subscribe((status: string) => {
         const dot = document.getElementById('rtDot');
         if (!dot) return;
-        if (status === 'SUBSCRIBED') {
-          dot.classList.add('connected');
-          dot.title = 'Realtime: connected';
-        } else {
-          dot.classList.remove('connected');
-          dot.title = `Realtime: ${status.toLowerCase()}`;
-        }
+        dot.classList.toggle('connected', status === 'SUBSCRIBED');
+        dot.title = status === 'SUBSCRIBED' ? 'Realtime: connected' : `Realtime: ${status.toLowerCase()}`;
       });
-      window.addEventListener('beforeunload', () => channel.unsubscribe());
+      window.addEventListener('beforeunload', () => ch.unsubscribe());
     } catch (_) {}
   })();
 </script>

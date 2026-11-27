@@ -1,7 +1,9 @@
 ---
+export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <Layout title="Seller Dashboard — Kebay">
@@ -48,7 +50,7 @@ import Footer from '../../components/Footer.astro';
           <p style="color:#888;font-size:14px;" id="welcomeName">Loading…</p>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a href="/seller/new-product"
+          <a href={`${base}/seller/new-product`}
             style="display:inline-flex;align-items:center;gap:6px;padding:11px 20px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;font-size:14px;">
             ➕ New Listing
           </a>
@@ -64,7 +66,7 @@ import Footer from '../../components/Footer.astro';
 
       <!-- Auth notice -->
       <div id="authNotice" style="display:none;padding:16px;background:#fff5f5;border:1px solid #fcc;border-radius:12px;margin-bottom:24px;font-size:14px;">
-        🔒 You need to <a href="/auth/signin" style="color:#e8450a;font-weight:700;">sign in</a> to access your dashboard.
+        🔒 You need to <a id="authNoticeLink" href="#" style="color:#e8450a;font-weight:700;">sign in</a> to access your dashboard.
       </div>
 
       <!-- Stats -->
@@ -115,7 +117,7 @@ import Footer from '../../components/Footer.astro';
           <div style="font-size:56px;margin-bottom:16px;">📦</div>
           <div style="font-size:18px;font-weight:700;color:#333;margin-bottom:8px;">No listings yet</div>
           <p style="margin-bottom:20px;">Start selling by adding your first product.</p>
-          <a href="/seller/new-product" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">+ Add First Product</a>
+          <a id="addFirstProductLink" href="#" style="display:inline-block;padding:12px 28px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;">+ Add First Product</a>
         </div>
 
         <div id="listingsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;"></div>
@@ -580,10 +582,17 @@ import Footer from '../../components/Footer.astro';
   document.getElementById('signOutBtn')?.addEventListener('click', async () => {
     await supabase.auth.signOut();
     localStorage.removeItem('kebay_role');
-    window.location.href = '/';
+    window.location.href = (window as any).BASE_URL || '/';
   });
 
   loadDashboard();
+
+  // Set dynamic BASE_URL links
+  const _B = (window as any).BASE_URL || '';
+  const authNoticeLink = document.getElementById('authNoticeLink') as HTMLAnchorElement;
+  if (authNoticeLink) authNoticeLink.href = _B + '/auth/signin';
+  const addFirstLink = document.getElementById('addFirstProductLink') as HTMLAnchorElement;
+  if (addFirstLink) addFirstLink.href = _B + '/seller/new-product';
 
   // ── Realtime subscriptions ──
   let currentSellerId: string | null = null;
