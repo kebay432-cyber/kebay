@@ -3,11 +3,13 @@ export const prerender = true;
 
 const supaUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
 const supaKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <script define:vars={{ BASE_URL: base }}>window.BASE_URL = BASE_URL;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard — Kebay</title>
   <meta name="supa-url" content={supaUrl} />
@@ -561,8 +563,8 @@ const supaKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
       } catch(e) {}
 
       if (!userId) {
-        document.getElementById('adminName').textContent = 'Demo Admin';
-        loadingEl.style.display = 'none'; return;
+        loadingEl.style.display = 'none';
+        deniedEl.style.display = 'flex'; return;
       }
       const res = await fetch(supabaseUrl + '/rest/v1/profiles?select=role,full_name&id=eq.' + userId, {
         headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + token }

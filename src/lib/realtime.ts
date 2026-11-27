@@ -1,7 +1,7 @@
 // Subscribe to a Supabase table and call callback on any change
 export function watchTable(supabase: any, table: string, callback: (payload: any) => void) {
   return supabase
-    .channel(`public:${table}:${Date.now()}`)
+    .channel(`public:${table}`)
     .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
     .subscribe();
 }
