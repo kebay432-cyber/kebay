@@ -1,9 +1,9 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import node from '@astrojs/node';
 
 export default defineConfig({
-  output: 'server',
-  adapter: node({ mode: 'standalone' }),
+  site: 'https://kebay432-cyber.github.io',
+  base: '/kebay',
+  output: 'static',
   server: { port: 4321 }
 });

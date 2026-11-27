@@ -5,27 +5,28 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { DEMO_PRODUCTS, ksh } from '../lib/demoData';
 
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 const categories = [
-  { name: 'Phones',        img: '/61B9jz7fEeL._AC_UY218_.jpg',  slug: 'phones' },
-  { name: 'Computers',     img: '/laptop.jpg',                   slug: 'computers' },
-  { name: 'Fashion',       img: '/fashion.jpg',                  slug: 'fashion' },
-  { name: 'Home & Garden', img: '/homeandgarden.jpg',            slug: 'home' },
-  { name: 'Motors',        img: '/cars.jpg',                     slug: 'motors' },
-  { name: 'Electronics',   img: '/electronics.jpg',              slug: 'electronics' },
-  { name: 'Sports',        img: '/sports.jpg',                   slug: 'sporting' },
-  { name: 'Gaming',        img: '/41gk0-eoy4L._SR210,210_.jpg',  slug: 'gaming' },
+  { name: 'Phones',        img: `${base}/61B9jz7fEeL._AC_UY218_.jpg`,  slug: 'phones' },
+  { name: 'Computers',     img: `${base}/laptop.jpg`,                   slug: 'computers' },
+  { name: 'Fashion',       img: `${base}/fashion.jpg`,                  slug: 'fashion' },
+  { name: 'Home & Garden', img: `${base}/homeandgarden.jpg`,            slug: 'home' },
+  { name: 'Motors',        img: `${base}/cars.jpg`,                     slug: 'motors' },
+  { name: 'Electronics',   img: `${base}/electronics.jpg`,              slug: 'electronics' },
+  { name: 'Sports',        img: `${base}/sports.jpg`,                   slug: 'sporting' },
+  { name: 'Gaming',        img: `${base}/41gk0-eoy4L._SR210,210_.jpg`,  slug: 'gaming' },
 ];
 
 const trending = [
-  { name: 'Tech',         img: '/electronics.jpg',  slug: 'electronics' },
-  { name: 'Motors',       img: '/cars.jpg',          slug: 'motors' },
-  { name: 'Fashion',      img: '/fashion.jpg',       slug: 'fashion' },
-  { name: 'Collectibles', img: '/41gk0-eoy4L._SR210,210_.jpg', slug: 'collectibles' },
-  { name: 'Home',         img: '/homeandgarden.jpg', slug: 'home' },
-  { name: 'Sports',       img: '/sports.jpg',        slug: 'sporting' },
+  { name: 'Tech',         img: `${base}/electronics.jpg`,                   slug: 'electronics' },
+  { name: 'Motors',       img: `${base}/cars.jpg`,                          slug: 'motors' },
+  { name: 'Fashion',      img: `${base}/fashion.jpg`,                       slug: 'fashion' },
+  { name: 'Collectibles', img: `${base}/41gk0-eoy4L._SR210,210_.jpg`,       slug: 'collectibles' },
+  { name: 'Home',         img: `${base}/homeandgarden.jpg`,                  slug: 'home' },
+  { name: 'Sports',       img: `${base}/sports.jpg`,                        slug: 'sporting' },
 ];
 
-// Use first 6 demo products for the homepage grid
 const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
   id: p.id,
   title: p.title,
@@ -50,7 +51,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
             <div class="bc-eyebrow">KENYA'S MARKETPLACE</div>
             <h1 class="bc-title">The future<br/>in your hands</h1>
             <p class="bc-body">Buy, sell anything in Kenya.<br/>Connect directly on WhatsApp.</p>
-            <a href="/search" class="bc-btn bc-btn-white" style="color:#e8450a;">Shop Now</a>
+            <a href={`${base}/search`} class="bc-btn bc-btn-white" style="color:#e8450a;">Shop Now</a>
             <span class="bc-bg-icon">🛍️</span>
           </div>
 
@@ -58,7 +59,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
             <div class="bc-eyebrow">LIMITED TIME</div>
             <h2 class="bc-title">Today's best<br/>deals</h2>
             <p class="bc-body">Fresh discounts every day.<br/>Low prices on top items.</p>
-            <a href="/search?deals=true" class="bc-btn bc-btn-white" style="color:#1a7a4a;">See Deals</a>
+            <a href={`${base}/search?deals=true`} class="bc-btn bc-btn-white" style="color:#1a7a4a;">See Deals</a>
             <span class="bc-bg-icon">🏷️</span>
           </div>
 
@@ -66,7 +67,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
             <div class="bc-eyebrow">NEW ARRIVALS</div>
             <h2 class="bc-title">Latest phones<br/>and gadgets</h2>
             <p class="bc-body">iPhones, Samsung, Tecno<br/>and more — all in KSh.</p>
-            <a href="/search?cat=phones" class="bc-btn" style="background:#e8450a;color:#fff;">Shop Phones</a>
+            <a href={`${base}/search?cat=phones`} class="bc-btn" style="background:#e8450a;color:#fff;">Shop Phones</a>
             <span class="bc-bg-icon">📱</span>
           </div>
 
@@ -74,7 +75,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
             <div class="bc-eyebrow">TRENDING NOW</div>
             <h2 class="bc-title">Style for<br/>every budget</h2>
             <p class="bc-body">Clothes, shoes, bags<br/>from Kenyan sellers.</p>
-            <a href="/search?cat=fashion" class="bc-btn bc-btn-white" style="color:#7c3aed;">Shop Fashion</a>
+            <a href={`${base}/search?cat=fashion`} class="bc-btn bc-btn-white" style="color:#7c3aed;">Shop Fashion</a>
             <span class="bc-bg-icon">👗</span>
           </div>
 
@@ -82,7 +83,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
             <div class="bc-eyebrow">TOP PICKS</div>
             <h2 class="bc-title">Electronics<br/>and home tech</h2>
             <p class="bc-body">TVs, laptops, audio<br/>at the best prices.</p>
-            <a href="/search?cat=electronics" class="bc-btn bc-btn-white" style="color:#0369a1;">Shop Electronics</a>
+            <a href={`${base}/search?cat=electronics`} class="bc-btn bc-btn-white" style="color:#0369a1;">Shop Electronics</a>
             <span class="bc-bg-icon">⚡</span>
           </div>
 
@@ -90,7 +91,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
             <div class="bc-eyebrow">HOW IT WORKS</div>
             <h2 class="bc-title">Buy directly<br/>on WhatsApp</h2>
             <p class="bc-body">Click Buy, message the seller<br/>instantly. No middleman.</p>
-            <a href="/auth/register" class="bc-btn bc-btn-white" style="color:#25D366;">Get Started</a>
+            <a href={`${base}/auth/register`} class="bc-btn bc-btn-white" style="color:#25D366;">Get Started</a>
             <span class="bc-bg-icon">💬</span>
           </div>
 
@@ -103,7 +104,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
         <h2 class="section-title">Shop by Category</h2>
         <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;">
           {categories.map(cat => (
-            <a href={`/search?cat=${cat.slug}`} class="cat-card">
+            <a href={`${base}/search?cat=${cat.slug}`} class="cat-card">
               {cat.img && <img src={cat.img} alt={cat.name} class="cat-card__img" />}
               <span class="cat-card__name">{cat.name}</span>
             </a>
@@ -120,12 +121,12 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
           </div>
           <div style="display:flex;align-items:center;gap:10px;">
             <span id="liveBadge" style="display:none;font-size:11px;font-weight:700;padding:3px 8px;border-radius:50px;background:#fee2e2;color:#dc2626;">🔴 Live</span>
-            <a href="/search?deals=true" style="font-size:13px;color:#e8450a;font-weight:600;">See all →</a>
+            <a href={`${base}/search?deals=true`} style="font-size:13px;color:#e8450a;font-weight:600;">See all →</a>
           </div>
         </div>
         <div class="deals-grid" id="dealsGrid">
           {demoProducts.map(p => (
-            <a href={`/product/${p.id}`} class="product-card">
+            <a href={`${base}/product/${p.id}`} class="product-card">
               <img src={p.image} alt={p.title} class="product-card__img" loading="lazy" />
               <div class="product-card__badge">{Math.round((1 - p.price / p.original) * 100)}% OFF</div>
               <button class="product-card__wish">🤍</button>
@@ -146,7 +147,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
         <div>
           <h2 style="font-size:22px;font-weight:800;margin-bottom:8px;">Shopping made easy</h2>
           <p style="opacity:0.9;font-size:14px;margin-bottom:16px;">Connect with trusted sellers across Kenya.<br/>Chat directly on WhatsApp — no middleman.</p>
-          <a href="/auth/register" style="display:inline-block;background:#fff;color:#1a7a4a;border-radius:50px;font-weight:700;padding:12px 24px;font-size:14px;">Get Started</a>
+        <a href={`${base}/auth/register`} style="display:inline-block;background:#fff;color:#1a7a4a;border-radius:50px;font-weight:700;padding:12px 24px;font-size:14px;">Get Started</a>
         </div>
         <div style="font-size:72px;opacity:0.25;">🛍️</div>
       </div>
@@ -156,7 +157,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
         <h2 class="section-title">Trending on Kebay</h2>
         <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;">
           {trending.map(cat => (
-            <a href={`/search?cat=${cat.slug}`} class="cat-card">
+            <a href={`${base}/search?cat=${cat.slug}`} class="cat-card">
               {cat.img && <img src={cat.img} alt={cat.name} class="cat-card__img" />}
               <span class="cat-card__name">{cat.name}</span>
             </a>
@@ -168,11 +169,11 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
       <section class="section">
         <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
           <h2 class="section-title" style="margin-bottom:0;">More to Explore</h2>
-          <a href="/search" style="font-size:13px;color:#e8450a;font-weight:600;">See all →</a>
+          <a href={`${base}/search`} style="font-size:13px;color:#e8450a;font-weight:600;">See all →</a>
         </div>
         <div class="explore-grid" id="exploreGrid">
           {demoProducts.map(p => (
-            <a href={`/product/${p.id}`} class="product-card">
+            <a href={`${base}/product/${p.id}`} class="product-card">
               <img src={p.image} alt={p.title} class="product-card__img" loading="lazy" />
               <button class="product-card__wish">🤍</button>
               <div class="product-card__body">
@@ -227,6 +228,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
   import { watchTable, fadeIn } from '../lib/realtime';
 
   const strip = document.getElementById('bannerStrip') as HTMLElement;
+  const B = (window as any).BASE_URL || '';
   document.getElementById('bannerNext')?.addEventListener('click', () => {
     strip?.scrollBy({ left: 280, behavior: 'smooth' });
   });
@@ -291,7 +293,7 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
       : '';
     const img = p.images?.[0] || p.image || 'https://picsum.photos/seed/product/400/400';
     return `
-      <a href="/product/${p.id}" class="product-card">
+      <a href="${B}/product/${p.id}" class="product-card">
         <img src="${img}" alt="${p.title}" class="product-card__img" loading="lazy" />
         ${badgeHtml}
         <button class="product-card__wish">🤍</button>

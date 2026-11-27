@@ -4,9 +4,10 @@ import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
-// Read initial params for SSR render only — JS takes over after load
-const q   = Astro.url.searchParams.get('q')   || '';
-const cat = Astro.url.searchParams.get('cat') || '';
+const q     = Astro.url.searchParams.get('q')     || '';
+const cat   = Astro.url.searchParams.get('cat')   || '';
+const deals = Astro.url.searchParams.get('deals') || '';
+const base  = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 <Layout title="Search — Kebay">
   <Header />
@@ -14,18 +15,33 @@ const cat = Astro.url.searchParams.get('cat') || '';
   <main>
     <div class="container" style="padding-top:16px;padding-bottom:48px;">
 
+      <!-- Deals banner — shown when ?deals=true -->
+      <div id="dealsBanner" style="display:none;background:linear-gradient(135deg,#e8450a,#c23a08);color:#fff;border-radius:16px;padding:20px 24px;margin-bottom:20px;align-items:center;gap:16px;">
+        <div style="font-size:36px;">🏷️</div>
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.8;margin-bottom:4px;">LIMITED TIME</div>
+          <div style="font-size:22px;font-weight:900;line-height:1.2;">Today's Best Deals</div>
+          <div style="font-size:13px;opacity:.85;margin-top:4px;">Products with the biggest discounts in Kenya</div>
+        </div>
+        <div style="margin-left:auto;font-size:48px;opacity:.15;">💰</div>
+      </div>
+
       <!-- Results header -->
       <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div>
+        <div style="display:flex;align-items:center;gap:10px;">
           <h1 id="resultsTitle" style="font-size:18px;font-weight:700;">All Products</h1>
-          <p id="resultsCount" style="font-size:13px;color:#666;margin-top:2px;">Loading…</p>
+          <span id="dealsBadge" style="display:none;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;padding:3px 10px;border-radius:50px;">🔥 Deals</span>
         </div>
-        <select id="sortSelect" style="padding:8px 12px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:13px;background:#fff;outline:none;cursor:pointer;">
-          <option value="default">Sort: Default</option>
-          <option value="price_asc">Price: Low to High</option>
-          <option value="price_desc">Price: High to Low</option>
-          <option value="name_asc">Name: A–Z</option>
-        </select>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <p id="resultsCount" style="font-size:13px;color:#666;"></p>
+          <select id="sortSelect" style="padding:8px 12px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:13px;background:#fff;outline:none;cursor:pointer;">
+            <option value="default">Sort: Default</option>
+            <option value="discount_desc">Biggest Discount</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="name_asc">Name: A–Z</option>
+          </select>
+        </div>
       </div>
 
       <div style="display:flex;gap:20px;align-items:flex-start;">
@@ -76,10 +92,11 @@ const cat = Astro.url.searchParams.get('cat') || '';
   }
 </style>
 
-<script define:vars={{ initialQ: q, initialCat: cat }}>
-  // Inject SSR-side initial values into window for the module script below
-  window.__kebayInitQ = initialQ;
-  window.__kebayInitCat = initialCat;
+<script define:vars={{ initialQ: q, initialCat: cat, initialDeals: deals, BASE_URL: base }}>
+  window.__kebayInitQ     = initialQ;
+  window.__kebayInitCat   = initialCat;
+  window.__kebayInitDeals = initialDeals;
+  window.BASE_URL         = BASE_URL;
 </script>
 
 <script>
@@ -87,55 +104,60 @@ const cat = Astro.url.searchParams.get('cat') || '';
   import { watchTable } from '../lib/realtime';
   import { DEMO_PRODUCTS } from '../lib/demoData';
 
-  // Pick up injected values (or fall back to URL params)
-  const initialQ = (window as any).__kebayInitQ || '';
-  const initialCat = (window as any).__kebayInitCat || '';
-  // ── All products data (fallback) — from canonical demoData.ts ──
+  const B = (window as any).BASE_URL || '';
+  const params0 = new URLSearchParams(location.search);
+  const initialQ     = (window as any).__kebayInitQ     || params0.get('q')     || '';
+  const initialCat   = (window as any).__kebayInitCat   || params0.get('cat')   || '';
+  const initialDeals = (window as any).__kebayInitDeals || params0.get('deals') || '';
+
   const ALL_PRODUCTS_DEMO = DEMO_PRODUCTS.map(p => ({
-    id: p.id,
-    title: p.title,
-    price: p.price,
-    image: p.images[0],
-    category: p.category,
-    seller: p.seller.name,
+    id: p.id, title: p.title, price: p.price,
+    original_price: p.original, image: p.images[0],
+    category: p.category, seller: p.seller.name,
   }));
 
   const CATEGORIES = [
-    { name:'All',           slug:'',           icon:'' },
-    { name:'Phones',        slug:'phones',     icon:'📱' },
-    { name:'Computers',     slug:'computers',  icon:'💻' },
-    { name:'Electronics',   slug:'electronics',icon:'⚡' },
-    { name:'Fashion',       slug:'fashion',    icon:'👗' },
-    { name:'Home',          slug:'home',       icon:'🏠' },
-    { name:'Motors',        slug:'motors',     icon:'🚗' },
-    { name:'Sports',        slug:'sporting',   icon:'⚽' },
-    { name:'Toys',          slug:'toys',       icon:'🎮' },
-    { name:'Gaming',        slug:'gaming',     icon:'🎮' },
+    { name:'All',         slug:'',            icon:'' },
+    { name:'Phones',      slug:'phones',      icon:'📱' },
+    { name:'Computers',   slug:'computers',   icon:'💻' },
+    { name:'Electronics', slug:'electronics', icon:'⚡' },
+    { name:'Fashion',     slug:'fashion',     icon:'👗' },
+    { name:'Home',        slug:'home',        icon:'🏠' },
+    { name:'Motors',      slug:'motors',      icon:'🚗' },
+    { name:'Sports',      slug:'sporting',    icon:'⚽' },
+    { name:'Gaming',      slug:'gaming',      icon:'🎮' },
   ];
 
   function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
 
-  // Live product store
   let ALL_PRODUCTS: any[] = ALL_PRODUCTS_DEMO;
 
-  // State
   let state = {
-    q:    (initialQ as string) || new URLSearchParams(location.search).get('q') || '',
-    cat:  (initialCat as string) || new URLSearchParams(location.search).get('cat') || '',
-    min:  '',
-    max:  '',
-    sort: 'default',
+    q:     initialQ,
+    cat:   initialCat,
+    deals: initialDeals === 'true',
+    min:   '',
+    max:   '',
+    sort:  initialDeals === 'true' ? 'discount_desc' : 'default',
   };
 
-  // ── Load products from Supabase ──
+  function applyDealsUI() {
+    const banner = document.getElementById('dealsBanner');
+    const badge  = document.getElementById('dealsBadge');
+    if (state.deals) {
+      if (banner) banner.style.display = 'flex';
+      if (badge) badge.style.display = 'inline-block';
+    } else {
+      if (banner) banner.style.display = 'none';
+      if (badge) badge.style.display = 'none';
+    }
+  }
+
   async function loadProducts() {
     try {
       const { data, error } = await supabase
-        .from('products')
-        .select('*, profiles(full_name)')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
+        .from('products').select('*, profiles(full_name)')
+        .eq('is_active', true).order('created_at', { ascending: false });
       if (!error && data && data.length > 0) {
         ALL_PRODUCTS = data.map((p: any) => ({
           ...p,
@@ -143,24 +165,19 @@ const cat = Astro.url.searchParams.get('cat') || '';
           seller: p.profiles?.full_name || 'Seller',
         }));
       }
-    } catch (_) {
-      // Keep demo data
-    }
+    } catch (_) {}
     render();
   }
 
-  // ── Render category sidebar ──
   function renderCats() {
     const sidebar = document.getElementById('catSidebar');
     const pills   = document.getElementById('catPills');
     if (!sidebar || !pills) return;
-
     sidebar.innerHTML = CATEGORIES.map(c => `
       <button onclick="setCat('${c.slug}')"
         style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:8px;font-size:14px;margin-bottom:2px;border:none;cursor:pointer;background:${state.cat===c.slug?'#fff0eb':'transparent'};color:${state.cat===c.slug?'#e8450a':'#333'};font-weight:${state.cat===c.slug?'700':'400'};">
         ${c.icon} ${c.name}
       </button>`).join('');
-
     pills.innerHTML = CATEGORIES.map(c => `
       <button onclick="setCat('${c.slug}')"
         style="display:inline-block;padding:7px 16px;border-radius:50px;font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;border:none;cursor:pointer;background:${state.cat===c.slug?'#e8450a':'#f0f0f0'};color:${state.cat===c.slug?'#fff':'#333'};">
@@ -168,122 +185,118 @@ const cat = Astro.url.searchParams.get('cat') || '';
       </button>`).join('');
   }
 
-  // ── Filter + sort products ──
   function getResults() {
     let r = [...ALL_PRODUCTS];
-    if (state.q)   r = r.filter(p => p.title.toLowerCase().includes(state.q.toLowerCase()) || (p.seller || '').toLowerCase().includes(state.q.toLowerCase()));
+    if (state.q)   r = r.filter(p => p.title.toLowerCase().includes(state.q.toLowerCase()) || (p.seller||'').toLowerCase().includes(state.q.toLowerCase()));
     if (state.cat) r = r.filter(p => p.category === state.cat);
+    if (state.deals) r = r.filter(p => { const orig = p.original_price ?? 0; return orig > p.price; });
     if (state.min) r = r.filter(p => p.price >= parseInt(state.min));
     if (state.max) r = r.filter(p => p.price <= parseInt(state.max));
-    if (state.sort === 'price_asc')  r.sort((a,b) => a.price - b.price);
-    if (state.sort === 'price_desc') r.sort((a,b) => b.price - a.price);
-    if (state.sort === 'name_asc')   r.sort((a,b) => a.title.localeCompare(b.title));
+    if (state.sort === 'price_asc')      r.sort((a,b) => a.price - b.price);
+    if (state.sort === 'price_desc')     r.sort((a,b) => b.price - a.price);
+    if (state.sort === 'name_asc')       r.sort((a,b) => a.title.localeCompare(b.title));
+    if (state.sort === 'discount_desc') {
+      r.sort((a, b) => {
+        const origA = a.original_price ?? a.price;
+        const origB = b.original_price ?? b.price;
+        const pctA  = origA > 0 ? (origA - a.price) / origA : 0;
+        const pctB  = origB > 0 ? (origB - b.price) / origB : 0;
+        return pctB - pctA;
+      });
+    }
     return r;
   }
 
-  // ── Render products ──
   function render() {
     const results = getResults();
-    const grid    = document.getElementById('productGrid')!;
-    const empty   = document.getElementById('emptyState')!;
-    const title   = document.getElementById('resultsTitle')!;
-    const count   = document.getElementById('resultsCount')!;
+    const grid  = document.getElementById('productGrid')!;
+    const empty = document.getElementById('emptyState')!;
+    const title = document.getElementById('resultsTitle')!;
+    const count = document.getElementById('resultsCount')!;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Update title
-    if (state.q) title.textContent = `Results for "${state.q}"`;
-    else if (state.cat) title.textContent = CATEGORIES.find(c=>c.slug===state.cat)?.name || state.cat;
-    else title.textContent = 'All Products';
+    applyDealsUI();
 
+    if (state.deals && !state.q && !state.cat) title.textContent = "Today's Deals";
+    else if (state.q)   title.textContent = `Results for "${state.q}"`;
+    else if (state.cat) title.textContent = CATEGORIES.find(c=>c.slug===state.cat)?.name || state.cat;
+    else                title.textContent = 'All Products';
     count.textContent = `${results.length} listing${results.length!==1?'s':''} found`;
 
-    if (results.length === 0) {
-      grid.innerHTML = '';
-      empty.style.display = 'block';
-    } else {
-      empty.style.display = 'none';
-      grid.innerHTML = results.map(p => `
-        <a href="/product/${p.id}" class="product-card">
-          <img src="${p.image || (p.images && p.images[0]) || 'https://picsum.photos/seed/product/400/400'}" alt="${p.title}" class="product-card__img" loading="lazy" />
-          <button class="product-card__wish" onclick="event.preventDefault()">🤍</button>
-          <div class="product-card__body">
-            <div class="product-card__title">${p.title}</div>
-            <div class="product-card__price" style="margin-top:4px;">${ksh(p.price)}</div>
-            <div style="font-size:11px;color:#888;margin-top:3px;">by ${p.seller || 'Seller'}</div>
-          </div>
-        </a>`).join('');
+    // Set correct sort select
+    (document.getElementById('sortSelect') as HTMLSelectElement).value = state.sort;
 
+    if (results.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; }
+    else {
+      empty.style.display = 'none';
+      grid.innerHTML = results.map(p => {
+        const orig = p.original_price ?? 0;
+        const hasDiscount = orig > p.price;
+        const pct = hasDiscount ? Math.round((1 - p.price / orig) * 100) : 0;
+        return `
+          <a href="${B}/product/${p.id}" class="product-card">
+            <img src="${p.image || 'https://picsum.photos/seed/product/400/400'}" alt="${p.title}" class="product-card__img" loading="lazy" />
+            ${hasDiscount ? `<div class="product-card__badge">${pct}% OFF</div>` : ''}
+            <button class="product-card__wish" onclick="event.preventDefault()">🤍</button>
+            <div class="product-card__body">
+              <div class="product-card__title">${p.title}</div>
+              <div style="margin-top:4px;">
+                <span class="product-card__price">${ksh(p.price)}</span>
+                ${hasDiscount ? `<span class="product-card__original">${ksh(orig)}</span>` : ''}
+              </div>
+              <div style="font-size:11px;color:#888;margin-top:3px;">by ${p.seller||'Seller'}</div>
+            </div>
+          </a>`;
+      }).join('');
       if (!reduced) {
         Array.from(grid.children).forEach((el, i) => {
-          setTimeout(() => {
-            const e = el as HTMLElement;
-            e.style.opacity = '0';
-            e.style.transform = 'translateY(8px)';
-            e.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-            requestAnimationFrame(() => {
-              e.style.opacity = '1';
-              e.style.transform = 'translateY(0)';
-            });
-          }, i * 30);
+          const e = el as HTMLElement;
+          e.style.opacity = '0'; e.style.transform = 'translateY(8px)';
+          e.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          setTimeout(() => { e.style.opacity = '1'; e.style.transform = 'translateY(0)'; }, i * 30);
         });
       }
     }
-
     renderCats();
-
-    // Update URL without reloading
-    const params = new URLSearchParams();
-    if (state.q)   params.set('q',   state.q);
-    if (state.cat) params.set('cat', state.cat);
-    if (state.min) params.set('min', state.min);
-    if (state.max) params.set('max', state.max);
-    const newUrl = '/search' + (params.toString() ? '?' + params.toString() : '');
-    history.replaceState(null, '', newUrl);
+    const p = new URLSearchParams();
+    if (state.q)     p.set('q',     state.q);
+    if (state.cat)   p.set('cat',   state.cat);
+    if (state.deals) p.set('deals', 'true');
+    if (state.min)   p.set('min',   state.min);
+    if (state.max)   p.set('max',   state.max);
+    history.replaceState(null, '', `${B}/search` + (p.toString() ? '?' + p.toString() : ''));
   }
 
-  // ── Actions ──
-  (window as any).setCat = (slug: string) => { state.cat = slug; render(); };
+  (window as any).setCat = (slug: string) => { state.cat = slug; state.deals = false; render(); };
 
   document.getElementById('applyPrice')?.addEventListener('click', () => {
     state.min = (document.getElementById('minPrice') as HTMLInputElement).value;
     state.max = (document.getElementById('maxPrice') as HTMLInputElement).value;
     render();
   });
-
   document.getElementById('sortSelect')?.addEventListener('change', (e) => {
     state.sort = (e.target as HTMLSelectElement).value;
     render();
   });
-
   function clearAll() {
-    state = { q: '', cat: '', min: '', max: '', sort: 'default' };
+    state = { q:'', cat:'', deals:false, min:'', max:'', sort:'default' };
     (document.getElementById('minPrice') as HTMLInputElement).value = '';
     (document.getElementById('maxPrice') as HTMLInputElement).value = '';
     (document.getElementById('sortSelect') as HTMLSelectElement).value = 'default';
     render();
   }
-
   document.getElementById('clearFilters')?.addEventListener('click', clearAll);
   document.getElementById('clearBtn')?.addEventListener('click', clearAll);
 
-  // Also handle header search form submission without reload
-  document.querySelectorAll('form[action="/search"]').forEach(form => {
+  document.querySelectorAll(`form[action="${B}/search"]`).forEach(form => {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const input = (form as HTMLFormElement).querySelector('input[name="q"]') as HTMLInputElement;
-      if (input) { state.q = input.value.trim(); render(); }
+      if (input) { state.q = input.value.trim(); state.deals = false; render(); }
     });
   });
 
-  // Initial load from Supabase
   loadProducts();
-
-  // Realtime subscription — re-fetch and re-apply current filters
-  const searchChannel = watchTable(supabase, 'products', async () => {
-    await loadProducts();
-  });
-
-  window.addEventListener('beforeunload', () => {
-    searchChannel.unsubscribe();
-  });
+  const searchChannel = watchTable(supabase, 'products', async () => { await loadProducts(); });
+  window.addEventListener('beforeunload', () => searchChannel.unsubscribe());
 </script>

@@ -1,55 +1,28 @@
 ---
+export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { createClient } from '@supabase/supabase-js';
-import { getDemoProductById } from '../../lib/demoData';
+import { DEMO_PRODUCTS, getDemoProductById } from '../../lib/demoData';
+
+export function getStaticPaths() {
+  return DEMO_PRODUCTS.map(p => ({ params: { id: p.id } }));
+}
 
 const { id } = Astro.params;
 const demoProduct = getDemoProductById(id as string);
 
-let product: any = demoProduct ?? null;
-
-// Fetch from Supabase if not a demo product
-if (!product) {
-  try {
-    const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-    const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-    if (supabaseUrl && supabaseKey && id) {
-      const supa = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
-      const { data } = await supa
-        .from('products')
-        .select('*, profiles!seller_id(full_name, whatsapp_number)')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (data) {
-        product = {
-          id: data.id,
-          title: data.title,
-          description: data.description,
-          price: data.price,
-          original_price: null,
-          images: data.images?.length ? data.images : ['https://picsum.photos/seed/product/600/600'],
-          category: data.category,
-          stock: data.stock,
-          seller: {
-            id: data.seller_id,
-            name: data.profiles?.full_name || 'Seller',
-            whatsapp: data.profiles?.whatsapp_number || '',
-            rating: 4.5,
-            sales: 0,
-          },
-        };
-      }
-    }
-  } catch (_) {}
-}
-
-// Redirect to search if product not found
-if (!product) {
-  return Astro.redirect('/search');
-}
+let product: any = demoProduct ?? {
+  id: id,
+  title: 'Loading…',
+  description: '',
+  price: 0,
+  original_price: 0,
+  images: ['https://picsum.photos/seed/product/600/600'],
+  category: '',
+  stock: 1,
+  seller: { id: '', name: 'Seller', whatsapp: '', rating: 4.5, sales: 0 },
+};
 
 function normalizeWA(phone: string) {
   if (!phone) return '';
