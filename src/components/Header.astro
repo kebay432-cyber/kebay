@@ -224,19 +224,35 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   </div>
 </nav>
 
+<script is:inline>
+  // ── Synchronous DOM setup — runs immediately, no module bundling ──
+  (function() {
+    function openMenu()  {
+      document.getElementById('slideMenu')?.classList.add('open');
+      document.getElementById('menuOverlay')?.classList.add('open');
+    }
+    function closeMenu() {
+      document.getElementById('slideMenu')?.classList.remove('open');
+      document.getElementById('menuOverlay')?.classList.remove('open');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('menuBtn')?.addEventListener('click', openMenu);
+      document.getElementById('menuClose')?.addEventListener('click', closeMenu);
+      document.getElementById('menuOverlay')?.addEventListener('click', closeMenu);
+    });
+
+    // Also wire immediately in case DOMContentLoaded already fired
+    if (document.readyState !== 'loading') {
+      document.getElementById('menuBtn')?.addEventListener('click', openMenu);
+      document.getElementById('menuClose')?.addEventListener('click', closeMenu);
+      document.getElementById('menuOverlay')?.addEventListener('click', closeMenu);
+    }
+  })();
+</script>
+
 <script>
-  const menuBtn  = document.getElementById('menuBtn');
-  const menuClose = document.getElementById('menuClose');
-  const overlay  = document.getElementById('menuOverlay');
-  const menu     = document.getElementById('slideMenu');
   const B = (window as any).BASE_URL || '';
-
-  function openMenu()  { menu?.classList.add('open');    overlay?.classList.add('open'); }
-  function closeMenu() { menu?.classList.remove('open'); overlay?.classList.remove('open'); }
-
-  menuBtn?.addEventListener('click', openMenu);
-  menuClose?.addEventListener('click', closeMenu);
-  overlay?.addEventListener('click', closeMenu);
 
   function updateCartBadge() {
     const cart  = JSON.parse(localStorage.getItem('kebay_cart') || '[]');
@@ -324,7 +340,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         const name    = session.user?.user_metadata?.full_name || session.user?.email || 'User';
         const initial = name.charAt(0).toUpperCase();
 
-        // Fetch role from profile
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user!.id).single();
         const role      = profile?.role || localStorage.getItem('kebay_role') || 'buyer';
         const dashboard = role === 'seller' ? `${B}/seller/dashboard` : role === 'admin' ? `${B}/admin/dashboard` : `${B}/buyer/dashboard`;
