@@ -156,16 +156,26 @@ const base  = import.meta.env.BASE_URL.replace(/\/$/, '');
   async function loadProducts() {
     try {
       const { data, error } = await supabase
-        .from('products').select('*, profiles(full_name)')
-        .eq('is_active', true).order('created_at', { ascending: false });
+        .from('products')
+        .select('*, profiles!seller_id(full_name, whatsapp_number)')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
       if (!error && data && data.length > 0) {
-        ALL_PRODUCTS = data.map((p: any) => ({
+        const realProducts = data.map((p: any) => ({
           ...p,
           image: p.images?.[0] || 'https://picsum.photos/seed/product/400/400',
           seller: p.profiles?.full_name || 'Seller',
         }));
+        // Merge real products first, then demo products not already represented
+        const demoFill = ALL_PRODUCTS_DEMO.filter(d => !realProducts.some((r: any) => r.id === d.id));
+        ALL_PRODUCTS = [...realProducts, ...demoFill];
+      } else {
+        ALL_PRODUCTS = ALL_PRODUCTS_DEMO;
       }
-    } catch (_) {}
+    } catch (_) {
+      ALL_PRODUCTS = ALL_PRODUCTS_DEMO;
+    }
     render();
   }
 

@@ -321,26 +321,38 @@ const demoProducts = DEMO_PRODUCTS.slice(0, 6).map(p => ({
   }
 
   async function fetchAndRenderProducts() {
+    let realProducts: any[] = [];
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('*, profiles!seller_id(full_name, whatsapp_number)')
         .eq('is_active', true)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (!error && data && data.length > 0) {
-        renderGrid('dealsGrid', data, true);
-        renderGrid('exploreGrid', data, false);
+        realProducts = data.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          original_price: p.original_price,
+          image: p.images?.[0] || 'https://picsum.photos/seed/product/400/400',
+          images: p.images,
+          category: p.category,
+          seller: p.profiles?.full_name || 'Seller',
+          sellerWa: p.profiles?.whatsapp_number || '',
+        }));
         document.getElementById('liveBadge')!.style.display = 'inline-block';
-        return;
       }
-    } catch (_) {
-      // fall through to demo
-    }
-    // Fallback to demo data
-    renderGrid('dealsGrid', DEMO, true);
-    renderGrid('exploreGrid', DEMO, false);
+    } catch (_) {}
+
+    // Merge: real products first, then fill up to 10 with demo (excluding duplicates)
+    const demoFill = DEMO.filter(d => !realProducts.some(r => r.id === d.id));
+    const dealsProducts = [...realProducts, ...demoFill].slice(0, 10);
+    const exploreProducts = [...realProducts, ...demoFill].slice(0, 10);
+
+    renderGrid('dealsGrid', dealsProducts, true);
+    renderGrid('exploreGrid', exploreProducts, false);
   }
 
   // Initial load

@@ -3,15 +3,44 @@ export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
+import { createClient } from '@supabase/supabase-js';
 import { DEMO_PRODUCTS, getDemoProductById } from '../../lib/demoData';
 
-export function getStaticPaths() {
-  return DEMO_PRODUCTS.map(p => ({ params: { id: p.id } }));
+export async function getStaticPaths() {
+  // Always include all demo product paths
+  const demoPaths = DEMO_PRODUCTS.map(p => ({ params: { id: p.id } }));
+
+  // Also fetch real product IDs from Supabase at build time
+  let realPaths: { params: { id: string } }[] = [];
+  try {
+    const supaUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+    const supaKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+    if (supaUrl && supaKey) {
+      const supa = createClient(supaUrl, supaKey, { auth: { persistSession: false } });
+      const { data } = await supa.from('products').select('id').eq('is_active', true);
+      if (data) {
+        realPaths = data.map((p: { id: string }) => ({ params: { id: p.id } }));
+      }
+    }
+  } catch (_) {}
+
+  // Merge, deduplicating by id
+  const seen = new Set(demoPaths.map(p => p.params.id));
+  const merged = [...demoPaths];
+  for (const rp of realPaths) {
+    if (!seen.has(rp.params.id)) {
+      seen.add(rp.params.id);
+      merged.push(rp);
+    }
+  }
+  return merged;
 }
 
 const { id } = Astro.params;
 const demoProduct = getDemoProductById(id as string);
 
+// For demo products, use the static data directly
+// For real products, the client-side script will fetch and hydrate the page
 let product: any = demoProduct ?? {
   id: id,
   title: 'Loading…',

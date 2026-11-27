@@ -69,6 +69,13 @@ import Footer from '../../components/Footer.astro';
         <!-- Image Upload Zone -->
         <div class="form-group">
           <label class="form-label">🖼️ Product Photos</label>
+
+          <!-- URL option (always available) -->
+          <div style="margin-bottom:10px;">
+            <input id="imageUrl" type="url" class="form-input" placeholder="Paste image URL (e.g. https://...jpg) — optional if uploading a file" />
+            <div style="font-size:12px;color:#888;margin-top:4px;">Enter a direct image URL, or drag/drop a file below.</div>
+          </div>
+
           <div id="uploadZone" style="border:2px dashed #e8450a;border-radius:12px;padding:32px;text-align:center;cursor:pointer;background:#fff9f7;transition:all 0.2s;">
             <div style="font-size:36px;margin-bottom:8px;">📷</div>
             <div style="font-weight:700;color:#e8450a;margin-bottom:4px;">Drop photos here or click to browse</div>
@@ -414,11 +421,14 @@ import Footer from '../../components/Footer.astro';
       (document.getElementById('previewPrice') as HTMLElement).textContent = price ? ksh(parseInt(price)) : '';
       (document.getElementById('previewCat') as HTMLElement).textContent = cat || '';
 
-      // Show first selected image in preview
+      // Show first selected image in preview (file upload or URL)
       const previewImg = document.getElementById('previewImg') as HTMLImageElement;
+      const urlInput = (document.getElementById('imageUrl') as HTMLInputElement)?.value.trim();
       if (selectedFiles.length > 0) {
         previewImg.src = URL.createObjectURL(selectedFiles[0]);
         if (activeFilter !== 'none') previewImg.style.filter = activeFilter;
+      } else if (urlInput) {
+        previewImg.src = urlInput;
       }
       preview.style.display = 'block';
     }
@@ -482,7 +492,13 @@ import Footer from '../../components/Footer.astro';
     }
 
     if (images.length === 0) {
-      images = ['https://picsum.photos/seed/product/600/600'];
+      // Try the URL input field
+      const urlInput = (document.getElementById('imageUrl') as HTMLInputElement)?.value.trim();
+      if (urlInput) {
+        images = [urlInput];
+      } else {
+        images = ['https://picsum.photos/seed/product/600/600'];
+      }
     }
 
     const { data, error } = await supabase.from('products').insert({
