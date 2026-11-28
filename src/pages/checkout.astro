@@ -85,6 +85,17 @@ import Footer from '../components/Footer.astro';
 <script>
   import { supabase } from '../lib/supabase';
 
+  const _B = (window as any).BASE_URL || '';
+
+  // ── Auth gate: redirect immediately if not signed in ──
+  (async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      window.location.href = `${_B}/auth/signin?return=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+  })();
+
   function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
 
   function normalizeWA(phone: string) {

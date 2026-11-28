@@ -81,6 +81,41 @@ function kshServer(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
 </style>
 
 <script>
+  const _B = (window as any).BASE_URL || '';
+
+  // ── Auth gate: cart requires sign-in ──
+  function getSession(): boolean {
+    try {
+      const supaUrl = document.querySelector('meta[name="supa-url"]')?.getAttribute('content') || '';
+      const prefix = supaUrl ? new URL(supaUrl).hostname.split('.')[0] : '';
+      const stored = JSON.parse(localStorage.getItem(`sb-${prefix}-auth-token`) || 'null');
+      return !!(stored?.access_token);
+    } catch { return false; }
+  }
+
+  if (!getSession()) {
+    // Show login prompt, hide cart contents
+    document.getElementById('cartEmpty')!.style.display = 'none';
+    document.getElementById('cartContent')!.style.display = 'none';
+    const main = document.querySelector('.container') as HTMLElement;
+    if (main) {
+      const authBox = document.createElement('div');
+      authBox.style.cssText = 'text-align:center;padding:60px 20px;';
+      authBox.innerHTML = `
+        <div style="font-size:56px;margin-bottom:16px;">🔒</div>
+        <h2 style="font-size:20px;font-weight:800;margin-bottom:8px;">Sign in to view your cart</h2>
+        <p style="color:#888;margin-bottom:24px;">You need an account to add items and check out.</p>
+        <a href="${_B}/auth/signin?return=${encodeURIComponent(window.location.pathname)}"
+          style="display:inline-block;padding:14px 32px;background:#e8450a;color:#fff;border-radius:50px;font-weight:700;font-size:16px;text-decoration:none;">
+          Sign In
+        </a>
+        <div style="margin-top:16px;">
+          <a href="${_B}/auth/register" style="color:#e8450a;font-weight:600;font-size:14px;">No account? Register free →</a>
+        </div>`;
+      main.prepend(authBox);
+    }
+  } else {
+
   function ksh(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
 
   function normalizeWA(phone: string) {
@@ -301,4 +336,6 @@ function kshServer(n: number) { return `KSh ${n.toLocaleString('en-KE')}`; }
 
   const productsChannel = watchTable(supabase, 'products', checkCartAvailability);
   window.addEventListener('beforeunload', () => productsChannel.unsubscribe());
+
+  } // end auth gate else
 </script>

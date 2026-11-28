@@ -411,18 +411,37 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
     window.dispatchEvent(new Event('kebay:cart-updated'));
   }
 
+  // ── Auth guard ──
+  function requireAuth(then: () => void) {
+    // Check for a Supabase session in localStorage (no network needed)
+    const B = (window as any).BASE_URL || '';
+    try {
+      const supaUrl = document.querySelector('meta[name="supa-url"]')?.getAttribute('content') || '';
+      const prefix = supaUrl ? new URL(supaUrl).hostname.split('.')[0] : '';
+      const stored = JSON.parse(localStorage.getItem(`sb-${prefix}-auth-token`) || 'null');
+      if (stored?.access_token) { then(); return; }
+    } catch (_) {}
+    // No session — redirect to sign-in, return here after
+    const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `${B}/auth/signin?return=${returnTo}`;
+  }
+
   addToCartBtn?.addEventListener('click', (e) => {
     const btn = e.currentTarget as HTMLElement;
-    addItemToCart(btn);
-    btn.textContent = '✅ Added to Cart';
-    setTimeout(() => { btn.innerHTML = '🛒 Add to Cart'; }, 1500);
+    requireAuth(() => {
+      addItemToCart(btn);
+      btn.textContent = '✅ Added to Cart';
+      setTimeout(() => { btn.innerHTML = '🛒 Add to Cart'; }, 1500);
+    });
   });
 
   addToCartMobileBtn?.addEventListener('click', (e) => {
     const btn = e.currentTarget as HTMLElement;
-    addItemToCart(btn);
-    btn.textContent = '✅ Added';
-    setTimeout(() => { btn.innerHTML = '🛒 Add to Cart'; }, 1500);
+    requireAuth(() => {
+      addItemToCart(btn);
+      btn.textContent = '✅ Added';
+      setTimeout(() => { btn.innerHTML = '🛒 Add to Cart'; }, 1500);
+    });
   });
 
   // ── Wishlist ──
@@ -451,6 +470,18 @@ const waLink = sellerWa ? `https://wa.me/${sellerWa}?text=${waText}` : '#';
     const wb = document.getElementById('wishBtn');
     if (wb) wb.textContent = '❤️';
   }
+
+  // ── WhatsApp Buy button auth guards ──
+  ['waBtn', 'waBtnMobile'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', (e) => {
+      const btn = e.currentTarget as HTMLAnchorElement;
+      if (btn.href === '#') return; // no seller WA set
+      requireAuth(() => {
+        window.open(btn.href, '_blank');
+      });
+      e.preventDefault();
+    });
+  });
 
   // ── Star selector ──
   let selectedStars = 0;

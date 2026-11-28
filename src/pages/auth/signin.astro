@@ -125,7 +125,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user!.id).single();
       if (profile) localStorage.setItem('kebay_role', profile.role);
       const B = (window as any).BASE_URL || '';
-      window.location.href = B + '/';
+      // Return to the page the user came from (e.g. cart, checkout, product)
+      const params = new URLSearchParams(window.location.search);
+      const returnTo = params.get('return');
+      window.location.href = returnTo ? returnTo : B + '/';
     }
   });
 </script>
